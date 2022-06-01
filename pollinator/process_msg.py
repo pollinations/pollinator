@@ -51,12 +51,13 @@ def kill_cog_container(container_id_file):
 
 
 def start_cog_container(message, output_path, container_id_file):
+    # docker run --rm -ti --publish 6421:5000 --mount type=bind,source=/tmp,target=/src/output  r8.im/pixray/text2image@sha256:f6ca4f09e1cad8c4adca2c86fd1f4c9121f5f2e6c2f00408ab19c4077192fd23 /bin/bash
     image = images[message["notebook"]]
-    gpus = "" if True else "--gpus all"  # TODO check if GPU is available
+    gpus = "--gpus all"  # TODO check if GPU is available
     # Start cog container
     cog_cmd = (
         f"docker run --rm --detach --cidfile {container_id_file} --publish 6421:5000 "
-        f"--mount type=bind,source={output_path},target=/src/output "
+        f"--mount type=bind,source={output_path},target=/tmp/outputs "
         f"{gpus} {image}"
     )
     logging.info(cog_cmd)
