@@ -25,7 +25,7 @@ def debug(f):
 def send_to_cog_container(message, output_path):
     # Send message to cog container
     payload = {"inputs": message["inputs"]}
-    response = requests.post("http://localhost:6421/predictions", json=payload)
+    response = requests.post("http://localhost:5000/predictions", json=payload)
 
     logging.info(f"response: {response} {response.text}")
 
@@ -56,7 +56,7 @@ def start_cog_container(message, output_path, container_id_file):
     gpus = "--gpus all"  # TODO check if GPU is available
     # Start cog container
     cog_cmd = (
-        f"docker run --rm --detach --cidfile {container_id_file} --publish 6421:5000 "
+        f"docker run --rm --detach --cidfile {container_id_file} --network host "
         f"--mount type=bind,source={output_path},target=/tmp/outputs "
         f"{gpus} {image}"
     )
