@@ -1,8 +1,8 @@
 import logging
 import os
 import shutil
-import time
 import subprocess
+import time
 from uuid import uuid4
 
 import requests
@@ -27,7 +27,6 @@ class BackgroundCommand:
         self.proc.wait()
         self.proc.stdout.close()
         self.proc.stderr.close()
-
 
 
 class RunningCogModel:
