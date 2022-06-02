@@ -9,16 +9,51 @@ from retry import retry
 from pollinator.constants import images
 
 
-def debug(f):
-    def debugged(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except Exception as e:
-            logging.error(type(e), e)
-            breakpoint()
-            f(*args, **kwargs)
+def process_message(message):
+    # start process: pollinate --send --ipns --nodeid nodeid --path /content/ipfs
+    logging.info(f"processing message: {message}")
+    output_path = os.path.abspath("/tmp/outputs")
+    container_id_file = "./container_id"
 
-    return debugged
+    prepare_output_folder(output_path, container_id_file)
+
+    # # Start IPFS syncinv=g
+    # ipfs_pid = subprocess.Popen(
+    #     f"pollinate --send --ipns --nodeid {message['pollen_id']}"
+    #     f" --path {output_path} ",
+    #     shell=True).pid
+
+    # process message
+    start_cog_container(message, output_path, container_id_file)
+    time.sleep(10)
+    send_to_cog_container(message, output_path)
+    kill_cog_container(container_id_file)
+
+    # # kill pollinate
+    # time.sleep(5)
+    # subprocess.Popen(["kill", str(ipfs_pid)])
+
+
+def prepare_output_folder(output_path, container_id_file):
+    logging.info(f"Mounting output folder: {output_path}")
+    shutil.rmtree(output_path, ignore_errors=True)
+    os.makedirs(output_path, exist_ok=True)
+    if os.path.exists(container_id_file):
+        os.remove(container_id_file)
+
+
+def start_cog_container(message, output_path, container_id_file):
+    # docker run --rm -ti --publish 6421:5000 --mount type=bind,source=/tmp,target=/src/output  r8.im/pixray/text2image@sha256:f6ca4f09e1cad8c4adca2c86fd1f4c9121f5f2e6c2f00408ab19c4077192fd23 /bin/bash
+    image = images[message["notebook"]]
+    gpus = "--gpus all"  # TODO check if GPU is available
+    # Start cog container
+    cog_cmd = (
+        f"docker run --rm --detach --cidfile {container_id_file} --network host "
+        f"--mount type=bind,source={output_path},target=/content "
+        f"{gpus} {image}"
+    )
+    logging.info(cog_cmd)
+    os.system(cog_cmd)
 
 
 @retry(tries=10, delay=1)
@@ -48,51 +83,3 @@ def kill_cog_container(container_id_file):
         os.remove(container_id_file)
     else:
         logging.info("No container id file found")
-
-
-def start_cog_container(message, output_path, container_id_file):
-    # docker run --rm -ti --publish 6421:5000 --mount type=bind,source=/tmp,target=/src/output  r8.im/pixray/text2image@sha256:f6ca4f09e1cad8c4adca2c86fd1f4c9121f5f2e6c2f00408ab19c4077192fd23 /bin/bash
-    image = images[message["notebook"]]
-    gpus = "--gpus all"  # TODO check if GPU is available
-    # Start cog container
-    cog_cmd = (
-        f"docker run --rm --detach --cidfile {container_id_file} --network host "
-        f"--mount type=bind,source={output_path},target=/tmp/outputs "
-        f"{gpus} {image}"
-    )
-    logging.info(cog_cmd)
-    os.system(cog_cmd)
-
-
-def prepare_output_folder(output_path, container_id_file):
-    logging.info(f"Mounting output folder: {output_path}")
-    shutil.rmtree(output_path, ignore_errors=True)
-    os.makedirs(output_path, exist_ok=True)
-    if os.path.exists(container_id_file):
-        os.remove(container_id_file)
-
-
-# @debug
-def process_message(message):
-    # start process: pollinate --send --ipns --nodeid nodeid --path /content/ipfs
-    logging.info(f"processing message: {message}")
-    output_path = os.path.abspath("/tmp/outputs")
-    container_id_file = "./container_id"
-
-    prepare_output_folder(output_path, container_id_file)
-
-    # # Start IPFS syncinv=g
-    # ipfs_pid = subprocess.Popen(
-    #     f"pollinate --send --ipns --nodeid {message['pollen_id']}"
-    #     f" --path {output_path} ",
-    #     shell=True).pid
-
-    # process message
-    start_cog_container(message, output_path, container_id_file)
-    time.sleep(10)
-    send_to_cog_container(message, output_path)
-    kill_cog_container(container_id_file)
-
-    # # kill pollinate
-    # time.sleep(5)
-    # subprocess.Popen(["kill", str(ipfs_pid)])
