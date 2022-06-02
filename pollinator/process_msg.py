@@ -26,7 +26,11 @@ def process_message(message):
     # process message
     start_cog_container(message, output_path, container_id_file)
     time.sleep(10)
-    send_to_cog_container(message, output_path)
+    try:
+        send_to_cog_container(message, output_path)
+    except Exception as e:
+        kill_cog_container(container_id_file)
+        raise e
     kill_cog_container(container_id_file)
 
     # # kill pollinate
@@ -56,7 +60,7 @@ def start_cog_container(message, output_path, container_id_file):
     os.system(cog_cmd)
 
 
-@retry(tries=10, delay=1)
+@retry(tries=30, delay=1)
 def send_to_cog_container(message, output_path):
     # Send message to cog container
     payload = {"input": message["inputs"], "output_file_prefix": str(output_path)}
