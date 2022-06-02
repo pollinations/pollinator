@@ -48,7 +48,7 @@ class RunningCogModel:
         logging.info(cog_cmd)
         os.system(cog_cmd)
 
-    def __exit__(self):
+    def __exit__(self, type, value, traceback):
         if os.path.exists(self.container_id_file):
             container_id = open(self.container_id_file).read()
             logging.info(f"Killing cog container: {container_id}")
