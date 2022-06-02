@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import time
+import subprocess
 
 import requests
 from retry import retry
@@ -18,10 +19,10 @@ def process_message(message):
     prepare_output_folder(output_path, container_id_file)
 
     # # Start IPFS syncinv=g
-    # ipfs_pid = subprocess.Popen(
-    #     f"pollinate --send --ipns --nodeid {message['pollen_id']}"
-    #     f" --path {output_path} ",
-    #     shell=True).pid
+    ipfs_pid = subprocess.Popen(
+        f"pollinate --send --ipns --nodeid {message['pollen_id']}"
+        f" --path {output_path} ",
+        shell=True).pid
 
     # process message
     start_cog_container(message, output_path, container_id_file)
@@ -30,12 +31,13 @@ def process_message(message):
         send_to_cog_container(message, output_path)
     except Exception as e:
         kill_cog_container(container_id_file)
+        time.sleep(5)
+        subprocess.Popen(["kill", str(ipfs_pid)])
         raise e
     kill_cog_container(container_id_file)
-
     # # kill pollinate
-    # time.sleep(5)
-    # subprocess.Popen(["kill", str(ipfs_pid)])
+    time.sleep(5)
+    subprocess.Popen(["kill", str(ipfs_pid)])
 
 
 def prepare_output_folder(output_path, container_id_file):
