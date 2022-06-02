@@ -49,7 +49,7 @@ def start_cog_container(message, output_path, container_id_file):
     # Start cog container
     cog_cmd = (
         f"docker run --rm --detach --cidfile {container_id_file} --network host "
-        f"--mount type=bind,source={output_path},target=/content "
+        f"--mount type=bind,source={output_path},target=/outputs "
         f"{gpus} {image}"
     )
     logging.info(cog_cmd)
