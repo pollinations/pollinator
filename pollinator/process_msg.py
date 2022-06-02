@@ -24,7 +24,7 @@ def debug(f):
 @retry(tries=10, delay=1)
 def send_to_cog_container(message, output_path):
     # Send message to cog container
-    payload = {"inputs": message["inputs"]}
+    payload = {"input": message["inputs"], "output_file_prefix": str(output_path)}
     response = requests.post("http://localhost:5000/predictions", json=payload)
 
     logging.info(f"response: {response} {response.text}")
