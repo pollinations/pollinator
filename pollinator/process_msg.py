@@ -86,7 +86,7 @@ def prepare_output_folder(output_path, container_id_file):
 @retry(tries=90, delay=2)
 def send_to_cog_container(message, output_path):
     # Send message to cog container
-    payload = {"input": message["inputs"], "output_file_prefix": str(output_path)}
+    payload = {"input": message["inputs"]}
     response = requests.post("http://localhost:5000/predictions", json=payload)
 
     logging.info(f"response: {response} {response.text}")
