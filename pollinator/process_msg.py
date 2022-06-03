@@ -23,6 +23,8 @@ class BackgroundCommand:
 
     def __exit__(self, type, value, traceback):
         time.sleep(5)
+        logging.info(f"Killing background command: {self.cmd} which generated these logs:")
+        logging.info(self.proc.stdout.read().decode("utf-8"))
         self.proc.kill()
         self.proc.wait()
         self.proc.stdout.close()
@@ -80,7 +82,6 @@ def prepare_output_folder(output_path, container_id_file):
     os.makedirs(output_path, exist_ok=True)
     if os.path.exists(container_id_file):
         os.remove(container_id_file)
-
 
 @retry(tries=90, delay=2)
 def send_to_cog_container(message, output_path):
