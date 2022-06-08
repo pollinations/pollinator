@@ -82,7 +82,7 @@ def prepare_output_folder(output_path):
     shutil.rmtree(output_path, ignore_errors=True)
     os.makedirs(output_path, exist_ok=True)
     with open(f"{output_path}/done", "w") as f:
-        f.write('false')
+        f.write("false")
     with open(f"{output_path}/time_start", "w") as f:
         f.write(str(int(time.time())))
 
@@ -94,7 +94,7 @@ def send_to_cog_container(message, output_path):
     response = requests.post("http://localhost:5000/predictions", json=payload)
 
     logging.info(f"response: {response} {response.text}")
-            
+
     with open(f"{output_path}/time_start", "w") as f:
         f.write(str(int(time.time())))
 
@@ -103,15 +103,14 @@ def send_to_cog_container(message, output_path):
         with open(f"{output_path}/error.txt", "w") as f:
             f.write(response.text)
         with open(f"{output_path}/success", "w") as f:
-            f.write('false')
+            f.write("false")
         raise Exception(
             f"Error while sending message to cog container: {response.text}"
         )
     else:
         with open(f"{output_path}/done", "w") as f:
-            f.write('true')
+            f.write("true")
         with open(f"{output_path}/success", "w") as f:
-            f.write('true')
-
+            f.write("true")
 
     return response
