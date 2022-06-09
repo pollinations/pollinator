@@ -45,7 +45,7 @@ class RunningCogModel:
         gpus = "--gpus all"  # TODO check if GPU is available
         # Start cog container
         cog_cmd = (
-            f"docker run --rm --detach --cidfile {self.container_id_file} --network host "
+            f"docker run --rm --detach --name cogmodel --network host "
             f"--mount type=bind,source={self.output_path},target=/outputs "
             f"{gpus} {image}"
         )
@@ -53,13 +53,7 @@ class RunningCogModel:
         os.system(cog_cmd)
 
     def __exit__(self, type, value, traceback):
-        if os.path.exists(self.container_id_file):
-            container_id = open(self.container_id_file).read()
-            logging.info(f"Killing cog container: {container_id}")
-            os.system(f"docker kill {container_id}")
-            os.remove(self.container_id_file)
-        else:
-            logging.info("No container id file found")
+        os.system(f"docker kill cogmodel")
 
 
 def process_message(message):
