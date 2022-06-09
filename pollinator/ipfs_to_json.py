@@ -62,6 +62,7 @@ def ipfs_dir_to_json(cid: str):
 def ipfs_subfolder_to_json(cid: str, subdir: str) -> Dict[str, Any]:
     """Get the contents of a subdir of a cid as json"""
     response = requests.get(f"{ipfs_endpoint}/ls?arg={cid}")
+    breakpoint()
     data = first_true(response.json()["Objects"], pred=lambda i: i["Hash"] == cid)[
         "Links"
     ]

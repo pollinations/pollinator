@@ -77,7 +77,7 @@ def process_message(message):
         f" --path {ipfs_root}"
     ):
         with RunningCogModel(message, output_path):
-            send_to_cog_container(message, output_path)
+            send_to_cog_container(inputs, output_path)
 
 
 def prepare_output_folder(output_path):
@@ -91,9 +91,9 @@ def prepare_output_folder(output_path):
 
 
 @retry(tries=90, delay=2)
-def send_to_cog_container(message, output_path):
+def send_to_cog_container(inputs, output_path):
     # Send message to cog container
-    payload = {"input": message["inputs"]}
+    payload = {"input": inputs}
     response = requests.post("http://localhost:5000/predictions", json=payload)
 
     logging.info(f"response: {response} {response.text}")
@@ -117,9 +117,3 @@ def send_to_cog_container(message, output_path):
             f.write("true")
 
     return response
-
-
-if __name__ == "__main__":
-    process_message(
-        {"ipfs": "QmYdTVSzh6MNDBKMG9Z1vqfzomTYWczV3iP15YBupKSsM1", "notebook": "bla"}
-    )
