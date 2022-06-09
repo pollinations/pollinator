@@ -69,7 +69,7 @@ def process_message(message):
     output_path = os.path.join(ipfs_root, "output")
 
     prepare_output_folder(output_path)
-    inputs = ipfs_subfolder_to_json(message['ipfs'], "input")
+    inputs = ipfs_subfolder_to_json(message["ipfs"], "input")
     logging.info(f"Fetched inputs from IPFS {message['ipfs']}: {inputs}")
     # Start IPFS syncing
     with BackgroundCommand(
@@ -120,4 +120,6 @@ def send_to_cog_container(message, output_path):
 
 
 if __name__ == "__main__":
-    process_message({"ipfs": "QmYdTVSzh6MNDBKMG9Z1vqfzomTYWczV3iP15YBupKSsM1","notebook": "bla"})
+    process_message(
+        {"ipfs": "QmYdTVSzh6MNDBKMG9Z1vqfzomTYWczV3iP15YBupKSsM1", "notebook": "bla"}
+    )

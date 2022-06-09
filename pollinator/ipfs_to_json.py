@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
-import requests
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List
+
+import requests
 
 ipfs_endpoint = "https://ipfs.pollinations.ai/api/v0"
 # ipfs_endpoint = "https://api.nft.storage"
@@ -15,7 +16,7 @@ def first_true(iterable: List, pred):
 
 def named_list_to_dict(object_list: List[Dict[str, str]]) -> Dict[str, str]:
     """Turn [{"name": "some-name", ...}, ...] into {"some-name": ..., ...}"""
-    return {i['Name']: i for i in object_list}
+    return {i["Name"]: i for i in object_list}
 
 
 def ipfs_dir_to_json(cid: str):
@@ -24,13 +25,12 @@ def ipfs_dir_to_json(cid: str):
         - files with file extension are skipped
         - filecontents containing a filename are resolved to absolute URIs
     """
-    object_list = requests.get(f"{ipfs_endpoint}/ls?arg={cid}")\
-                          .json()
-    object_list = object_list['Objects'][0]['Links']
+    object_list = requests.get(f"{ipfs_endpoint}/ls?arg={cid}").json()
+    object_list = object_list["Objects"][0]["Links"]
 
     metadata = named_list_to_dict(object_list)
     contents = {}
-    files = {} # Name: URI
+    files = {}  # Name: URI
     for name, value in metadata.items():
         uri = f"{ipfs_files_endpoint}/{cid}/{name}"
         # skip files but track which files are available
@@ -39,28 +39,32 @@ def ipfs_dir_to_json(cid: str):
             continue
         # Get filecontent
         content = None
-        if value['Size'] < 250:
+        if value["Size"] < 250:
             resp = requests.get(uri)
             try:
                 content = resp.json()
-            except Exception as e:
+            except:  # noqa: E722
                 try:
-                    content = resp.content.decode('utf-8')
-                except:
+                    content = resp.content.decode("utf-8")
+                except:  # noqa: E722
                     pass
-        if content is None:        
-            logging.warning(f"Large file: {name} in {ipfs_files_endpoint}/{value['Hash']} - skipped in json conversion")
+        if content is None:
+            logging.warning(
+                f"Large file: {name} in {ipfs_files_endpoint}/{value['Hash']} - skipped in json conversion"
+            )
         contents[name] = content
-    
+
     contents = {key: files.get(value, value) for key, value in contents.items()}
-    
+
     return contents
 
 
 def ipfs_subfolder_to_json(cid: str, subdir: str) -> Dict[str, Any]:
     """Get the contents of a subdir of a cid as json"""
     response = requests.get(f"{ipfs_endpoint}/ls?arg={cid}")
-    data = first_true(response.json()['Objects'], pred=lambda i: i['Hash']==cid)["Links"]
-    links = {i['Name']: i['Hash'] for i in data}
+    data = first_true(response.json()["Objects"], pred=lambda i: i["Hash"] == cid)[
+        "Links"
+    ]
+    links = {i["Name"]: i["Hash"] for i in data}
     inputs = ipfs_dir_to_json(links[subdir])
     return inputs
