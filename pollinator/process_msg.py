@@ -35,24 +35,23 @@ class BackgroundCommand:
 
 
 class RunningCogModel:
-    def __init__(self, message, output_path):
-        self.message = message
-        self.output_path = output_path
-        self.container_id_file = str(uuid4().hex)
-
-    def __enter__(self):
-        image = images[self.message["notebook"]]
+    def __init__(self, image, output_path):
+        self.image = image
         gpus = "--gpus all"  # TODO check if GPU is available
         # Start cog container
-        cog_cmd = (
+        self.cog_cmd = (
             f"docker run --rm --detach --name cogmodel --network host "
-            f"--mount type=bind,source={self.output_path},target=/outputs "
+            f"--mount type=bind,source={output_path},target=/outputs "
             f"{gpus} {image}"
         )
-        logging.info(cog_cmd)
-        os.system(cog_cmd)
+        logging.info(f"Initializing cog command: {self.cog_cmd}")
+
+    def __enter__(self):
+        logging.info("Starting cog model")
+        os.system(self.cog_cmd)
 
     def __exit__(self, type, value, traceback):
+        logging.info(f"Killing {self.image}")
         os.system(f"docker kill cogmodel")
 
 
@@ -70,7 +69,7 @@ def process_message(message):
         f"pollinate --send --ipns --nodeid {message['pollen_id']}"
         f" --path {ipfs_root}"
     ):
-        with RunningCogModel(message, output_path):
+        with RunningCogModel(images[message["notebook"]], output_path):
             send_to_cog_container(inputs, output_path)
 
 
