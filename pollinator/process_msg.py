@@ -9,6 +9,7 @@ import requests
 from retry import retry
 
 from pollinator.constants import images
+from pollinator.ipfs_to_json import ipfs_subfolder_to_json
 
 
 class BackgroundCommand:
@@ -64,14 +65,16 @@ class RunningCogModel:
 def process_message(message):
     # start process: pollinate --send --ipns --nodeid nodeid --path /content/ipfs
     logging.info(f"processing message: {message}")
-    output_path = os.path.abspath("/tmp/outputs")
+    ipfs_root = os.path.abspath("/tmp/ipfs/")
+    output_path = os.path.join(ipfs_root, "output")
 
     prepare_output_folder(output_path)
-
-    # # Start IPFS syncinv=g
+    inputs = ipfs_subfolder_to_json(message['ipfs'], "input")
+    logging.info(f"Fetched inputs from IPFS {message['ipfs']}: {inputs}")
+    # Start IPFS syncing
     with BackgroundCommand(
         f"pollinate --send --ipns --nodeid {message['pollen_id']}"
-        f" --path {output_path}"
+        f" --path {ipfs_root}"
     ):
         with RunningCogModel(message, output_path):
             send_to_cog_container(message, output_path)
@@ -114,3 +117,7 @@ def send_to_cog_container(message, output_path):
             f.write("true")
 
     return response
+
+
+if __name__ == "__main__":
+    process_message({"ipfs": "QmYdTVSzh6MNDBKMG9Z1vqfzomTYWczV3iP15YBupKSsM1","notebook": "bla"})
