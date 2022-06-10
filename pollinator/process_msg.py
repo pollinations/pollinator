@@ -17,15 +17,16 @@ class BackgroundCommand:
 
     def __enter__(self):
         self.proc = subprocess.Popen(
-            f"exec {self.cmd}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            f"exec {self.cmd}",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         return self.proc
 
     def __exit__(self, type, value, traceback):
         time.sleep(5)
-        logging.info(
-            f"Killing background command: {self.cmd}"
-        )
+        logging.info(f"Killing background command: {self.cmd}")
         self.proc.kill()
         logs, errors = self.proc.communicate()
         logging.info(f"   Logs: {logs}")
