@@ -51,6 +51,7 @@ def main(aws_endpoint=None, aws_profile=None):
     wait_for_queue_url(aws_endpoint)
 
     while True:
+        logging.info("Ready to receive message")
         try:
             response = sqs.receive_message(
                 QueueUrl=queue_url,
@@ -67,6 +68,8 @@ def main(aws_endpoint=None, aws_profile=None):
 
         messages = response["Messages"]
 
+        logging.info(f"Fetched {len(messages)} messages")
+
         for message in messages:
             # Delete received message from queue
             try:
@@ -74,6 +77,7 @@ def main(aws_endpoint=None, aws_profile=None):
             except Exception as e:
                 logging.error(f"exception while processing message: {str(e)}")
 
+            logging.info("Deleting message...")
             sqs.delete_message(
                 QueueUrl=queue_url, ReceiptHandle=message["ReceiptHandle"]
             )
