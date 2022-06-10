@@ -17,7 +17,7 @@ class BackgroundCommand:
 
     def __enter__(self):
         self.proc = subprocess.Popen(
-            self.cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            f"exec {self.cmd}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         return self.proc
 
@@ -28,6 +28,7 @@ class BackgroundCommand:
         )
         logging.info(self.proc.communicate())
         self.proc.kill()
+        logging.info("killed")
         self.proc.stdout.close()
         self.proc.stderr.close()
 
