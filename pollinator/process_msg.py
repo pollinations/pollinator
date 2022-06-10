@@ -1,9 +1,11 @@
 import logging
+from multiprocessing.sharedctypes import Value
 import os
 import shutil
 import subprocess
 import time
 from uuid import uuid4
+from pydantic import ValidationError
 
 import requests
 from retry import retry
@@ -60,16 +62,19 @@ def process_message(message):
     logging.info(f"processing message: {message}")
     ipfs_root = os.path.abspath("/tmp/ipfs/")
     output_path = os.path.join(ipfs_root, "output")
+    image = images.get(message["notebook"], None)
+    if image is None:
+        raise ValueError(f"Model not found: {message['notebook']}")
 
     prepare_output_folder(output_path)
-    inputs = ipfs_subfolder_to_json(message["ipfs"], "input")
-    logging.info(f"Fetched inputs from IPFS {message['ipfs']}: {inputs}")
+    inputs = fetch_inputs(message["ipfs"])
+
     # Start IPFS syncing
     with BackgroundCommand(
         f"pollinate --send --ipns --nodeid {message['pollen_id']}"
         f" --path {ipfs_root}"
     ):
-        with RunningCogModel(images[message["notebook"]], output_path):
+        with RunningCogModel(image, output_path):
             send_to_cog_container(inputs, output_path)
 
 
@@ -81,6 +86,15 @@ def prepare_output_folder(output_path):
         f.write("false")
     with open(f"{output_path}/time_start", "w") as f:
         f.write(str(int(time.time())))
+
+
+def fetch_inputs(ipfs_cid):
+    try:
+        inputs = ipfs_subfolder_to_json(ipfs_cid, "input")
+    except KeyError:
+        raise ValueError(f"IPFS hash {ipfs_cid} could ot be resolved")
+    logging.info(f"Fetched inputs from IPFS {ipfs_cid}: {inputs}")
+    return inputs
 
 
 @retry(tries=90, delay=2)

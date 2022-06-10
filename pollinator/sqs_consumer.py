@@ -10,7 +10,7 @@ from retry import retry
 
 from pollinator.process_msg import process_message
 
-logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
+logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.INFO)
 
 
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
@@ -75,7 +75,7 @@ def main(aws_endpoint=None, aws_profile=None):
             try:
                 process_message(json.loads(message["Body"]))
             except Exception as e:
-                logging.error(f"exception while processing message: {str(e)}")
+                logging.error(f"exception while processing message: {type(e)}: {str(e)}")
 
             logging.info("Deleting message...")
             sqs.delete_message(
