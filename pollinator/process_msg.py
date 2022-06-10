@@ -24,13 +24,13 @@ class BackgroundCommand:
     def __exit__(self, type, value, traceback):
         time.sleep(5)
         logging.info(
-            f"Killing background command: {self.cmd} which generated these logs:"
+            f"Killing background command: {self.cmd}"
         )
-        logging.info(self.proc.communicate())
         self.proc.kill()
+        logs, errors = self.proc.communicate()
+        logging.info(f"   Logs: {logs}")
+        logging.error(f"   errors: {errors}")
         logging.info("killed")
-        self.proc.stdout.close()
-        self.proc.stderr.close()
 
 
 class RunningCogModel:
