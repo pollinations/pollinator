@@ -26,9 +26,8 @@ class BackgroundCommand:
         logging.info(
             f"Killing background command: {self.cmd} which generated these logs:"
         )
-        logging.info(self.proc.stdout.read().decode("utf-8"))
+        logging.info(self.proc.communicate())
         self.proc.kill()
-        self.proc.wait()
         self.proc.stdout.close()
         self.proc.stderr.close()
 
