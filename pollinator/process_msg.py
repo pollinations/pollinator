@@ -1,11 +1,8 @@
 import logging
-from multiprocessing.sharedctypes import Value
 import os
 import shutil
 import subprocess
 import time
-from uuid import uuid4
-from pydantic import ValidationError
 
 import requests
 from retry import retry
@@ -54,7 +51,7 @@ class RunningCogModel:
 
     def __exit__(self, type, value, traceback):
         logging.info(f"Killing {self.image}")
-        os.system(f"docker kill cogmodel")
+        os.system("docker kill cogmodel")
 
 
 def process_message(message):

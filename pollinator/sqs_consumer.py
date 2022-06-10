@@ -75,7 +75,9 @@ def main(aws_endpoint=None, aws_profile=None):
             try:
                 process_message(json.loads(message["Body"]))
             except Exception as e:
-                logging.error(f"exception while processing message: {type(e)}: {str(e)}")
+                logging.error(
+                    f"exception while processing message: {type(e)}: {str(e)}"
+                )
 
             logging.info("Deleting message...")
             sqs.delete_message(
