@@ -97,7 +97,7 @@ def prepare_output_folder(output_path):
 
 def fetch_inputs(ipfs_cid):
     try:
-        inputs = ipfs_subfolder_to_json(ipfs_cid, "inputs")
+        inputs = ipfs_subfolder_to_json(ipfs_cid, "input")
     except KeyError:
         raise ValueError(f"IPFS hash {ipfs_cid} could ot be resolved")
     logging.info(f"Fetched inputs from IPFS {ipfs_cid}: {inputs}")
@@ -130,5 +130,11 @@ def send_to_cog_container(inputs, output_path):
 
 # Since ipfs reads its data from the filesystem we write keys and values to files using this function
 def write_folder(path, key, value):
+    os.makedirs(path, exist_ok=True)
     with open(f"{path}/{key}", "w") as f:
         f.write(value)
+
+
+# if __name__ == "__main__":
+#     message = {'pollen_id': 'c3ca8c1b484544d78126e49bc2f0bdec', 'notebook': 'latent-diffusion', 'ipfs': 'QmNTsdMxTY4BdcqB9QpjHHDZaxN9uU9QoqWRwpnK55kVM7'}
+#     process_message(message)
