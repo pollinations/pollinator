@@ -72,11 +72,10 @@ def process_message(message):
     # The reasoning behind having /output and /input was that we could always reproduce the run from the artifact that is produced
     # And also for the UI to display some information about the model used to create the output
     # It may have been more consistent to use pollinate --receive instead of fetching the ipfs content via HTTP
-    # But since we're going to switch this out soon it doesn't matter. 
+    # But since we're going to switch this out soon it doesn't matter.
 
     for key, value in inputs.items():
         write_folder(input_path, key, value)
-
 
     # Start IPFS syncing
     with BackgroundCommand(
@@ -94,7 +93,7 @@ def prepare_output_folder(output_path):
 
     write_folder(output_path, "done", "false")
     write_folder(output_path, "time_start", str(int(time.time())))
-    
+
 
 def fetch_inputs(ipfs_cid):
     try:
@@ -113,7 +112,7 @@ def send_to_cog_container(inputs, output_path):
 
     logging.info(f"response: {response} {response.text}")
 
-    write_folder(output_path,"time_start",str(int(time.time())))
+    write_folder(output_path, "time_start", str(int(time.time())))
 
     if response.status_code != 200:
         logging.error(response.text)
@@ -123,13 +122,13 @@ def send_to_cog_container(inputs, output_path):
             f"Error while sending message to cog container: {response.text}"
         )
     else:
-        write_folder(output_path, "done","true")
-        write_folder(output_path, "success","true")
+        write_folder(output_path, "done", "true")
+        write_folder(output_path, "success", "true")
 
     return response
 
 
 # Since ipfs reads its data from the filesystem we write keys and values to files using this function
 def write_folder(path, key, value):
-    with open (f"{path}/{key}", "w") as f:
+    with open(f"{path}/{key}", "w") as f:
         f.write(value)
