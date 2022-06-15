@@ -97,7 +97,7 @@ def prepare_output_folder(output_path):
 
 def fetch_inputs(ipfs_cid):
     try:
-        inputs = ipfs_subfolder_to_json(ipfs_cid, "input")
+        inputs = ipfs_subfolder_to_json(ipfs_cid, "inputs")
     except KeyError:
         raise ValueError(f"IPFS hash {ipfs_cid} could ot be resolved")
     logging.info(f"Fetched inputs from IPFS {ipfs_cid}: {inputs}")
