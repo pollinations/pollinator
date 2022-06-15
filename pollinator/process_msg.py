@@ -69,7 +69,7 @@ def process_message(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"DEBUG=* pollinate --send --ipns --nodeid {message['pollen_id']}"
+        f"pollinate --send --ipns --nodeid {message['pollen_id']}"
         f" --path {ipfs_root}"
     ):
         with RunningCogModel(image, output_path):
@@ -88,7 +88,7 @@ def prepare_output_folder(output_path):
 
 def fetch_inputs(ipfs_cid):
     try:
-        inputs = ipfs_subfolder_to_json(ipfs_cid, "inputs")
+        inputs = ipfs_subfolder_to_json(ipfs_cid, "input")
     except KeyError:
         raise ValueError(f"IPFS hash {ipfs_cid} could ot be resolved")
     logging.info(f"Fetched inputs from IPFS {ipfs_cid}: {inputs}")
@@ -122,7 +122,3 @@ def send_to_cog_container(inputs, output_path):
             f.write("true")
 
     return response
-
-
-# if __name__ == "__main__":
-#     process_message({'pollen_id': '620bc68f17c647ab93b0194865fa78b0', 'notebook': 'latent-diffusion', 'ipfs': 'QmVArmzi9u4K3LoUcEwFxUyTibZ4a4BNJ3oq7qtJhTQ5dx'})
