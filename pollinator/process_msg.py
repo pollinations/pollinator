@@ -80,11 +80,10 @@ def prepare_output_folder(output_path):
     logging.info(f"Mounting output folder: {output_path}")
     shutil.rmtree(output_path, ignore_errors=True)
     os.makedirs(output_path, exist_ok=True)
-    with open(f"{output_path}/done", "w") as f:
-        f.write("false")
-    with open(f"{output_path}/time_start", "w") as f:
-        f.write(str(int(time.time())))
 
+    write_folder(output_path, "done", "false")
+    write_folder(output_path, "time_start", str(int(time.time())))
+    
 
 def fetch_inputs(ipfs_cid):
     try:
@@ -103,22 +102,23 @@ def send_to_cog_container(inputs, output_path):
 
     logging.info(f"response: {response} {response.text}")
 
-    with open(f"{output_path}/time_start", "w") as f:
-        f.write(str(int(time.time())))
+    write_folder(output_path,"time_start",str(int(time.time())))
 
     if response.status_code != 200:
         logging.error(response.text)
-        with open(f"{output_path}/error.txt", "w") as f:
-            f.write(response.text)
-        with open(f"{output_path}/success", "w") as f:
-            f.write("false")
+        write_folder(output_path, "log", response.text)
+        write_folder(output_path, "success", "false")
         raise Exception(
             f"Error while sending message to cog container: {response.text}"
         )
     else:
-        with open(f"{output_path}/done", "w") as f:
-            f.write("true")
-        with open(f"{output_path}/success", "w") as f:
-            f.write("true")
+        write_folder(output_path, "done","true")
+        write_folder(output_path, "success","true")
 
     return response
+
+
+# Since ipfs reads its data from the filesystem we write keys and values to files using this function
+def write_folder(path, key, value):
+    with open (f"{path}/{key}", "w") as f:
+        f.write(value)

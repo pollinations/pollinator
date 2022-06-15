@@ -7,7 +7,7 @@ import requests
 
 ipfs_endpoint = "https://ipfs.pollinations.ai/api/v0"
 # ipfs_endpoint = "https://api.nft.storage"
-ipfs_files_endpoint = "https://nftstorage.link/ipfs"
+ipfs_files_endpoint = "https://ipfs.pollinations.ai/ipfs"
 
 
 def first_true(iterable: List, pred):
