@@ -60,12 +60,23 @@ def process_message(message):
     logging.info(f"processing message: {message}")
     ipfs_root = os.path.abspath("/tmp/ipfs/")
     output_path = os.path.join(ipfs_root, "output")
+    input_path = os.path.join(ipfs_root, "input")
     image = images.get(message["notebook"], None)
     if image is None:
         raise ValueError(f"Model not found: {message['notebook']}")
 
     prepare_output_folder(output_path)
     inputs = fetch_inputs(message["ipfs"])
+
+    # Write inputs to /input
+    # The reasoning behind having /output and /input was that we could always reproduce the run from the artifact that is produced
+    # And also for the UI to display some information about the model used to create the output
+    # It may have been more consistent to use pollinate --receive instead of fetching the ipfs content via HTTP
+    # But since we're going to switch this out soon it doesn't matter. 
+
+    for key, value in inputs.items():
+        write_folder(input_path, key, value)
+
 
     # Start IPFS syncing
     with BackgroundCommand(
