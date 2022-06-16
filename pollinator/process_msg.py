@@ -34,6 +34,7 @@ class BackgroundCommand:
         logging.info("killed")
 
 
+loaded_model = None
 class RunningCogModel:
     def __init__(self, image, output_path):
         self.image = image
@@ -47,12 +48,21 @@ class RunningCogModel:
         logging.info(f"Initializing cog command: {self.cog_cmd}")
 
     def __enter__(self):
-        logging.info("Starting cog model")
+        global loaded_model
+        if loaded_model == self.image:
+            logging.info(f"Model already loaded: {self.image}")
+            return
+        if loaded_model is not None:
+            logging.info(f"Killing previous model ({loaded_model})")
+            os.system("docker kill cogmodel")
+        
+        logging.info(f"Starting {self.image}: {self.cog_cmd}")
         os.system(self.cog_cmd)
+        loaded_model = self.image
 
     def __exit__(self, type, value, traceback):
-        logging.info(f"Killing {self.image}")
-        os.system("docker kill cogmodel")
+        # we leave the model running in case the next request needs the same model
+        pass
 
 
 def process_message(message):
