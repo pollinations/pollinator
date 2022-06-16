@@ -103,7 +103,9 @@ def process_message(message):
         f" --path {ipfs_root}"
     ):
         with RunningCogModel(image, output_path):
-            send_to_cog_container(inputs, output_path)
+            response = send_to_cog_container(inputs, output_path)
+            if response.status_code == 500:
+                kill_cog_model()
 
 
 def prepare_output_folder(output_path):
@@ -143,7 +145,6 @@ def send_to_cog_container(inputs, output_path):
     else:
         write_folder(output_path, "done", "true")
         write_folder(output_path, "success", "true")
-        kill_cog_model()
 
     return response
 
