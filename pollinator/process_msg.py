@@ -52,17 +52,10 @@ class RunningCogModel:
     def __enter__(self):
         global loaded_model
         if loaded_model == self.image:
-            logging.info(f"Model already loaded: {self.image}")
-            return
-        else:
-            try:
-                os.system("docker kill cogmodel")
-                time.sleep(
-                    3
-                )  # we have to wait until the container name is available again :/
-                logging.info(f"Killed previous model ({loaded_model})")
-            except:  # noqa
-                pass
+            if requests.get("http://localhost:5000/").status_code == 200:
+                logging.info(f"Model already loaded: {self.image}")
+                return
+        kill_cog_model()
 
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
         os.system(self.cog_cmd)
@@ -70,6 +63,15 @@ class RunningCogModel:
 
     def __exit__(self, type, value, traceback):
         # we leave the model running in case the next request needs the same model
+        pass
+
+
+def kill_cog_model():
+    try:
+        os.system("docker kill cogmodel")
+        time.sleep(3)  # we have to wait until the container name is available again :/
+        logging.info(f"Killed previous model ({loaded_model})")
+    except:  # noqa
         pass
 
 
@@ -141,6 +143,7 @@ def send_to_cog_container(inputs, output_path):
     else:
         write_folder(output_path, "done", "true")
         write_folder(output_path, "success", "true")
+        kill_cog_model()
 
     return response
 
