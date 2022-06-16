@@ -57,9 +57,11 @@ class RunningCogModel:
         else:
             try:
                 os.system("docker kill cogmodel")
-                time.sleep(3) # we have to wait until the container name is available again :/
+                time.sleep(
+                    3
+                )  # we have to wait until the container name is available again :/
                 logging.info(f"Killed previous model ({loaded_model})")
-            except: # noqa
+            except:  # noqa
                 pass
 
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
