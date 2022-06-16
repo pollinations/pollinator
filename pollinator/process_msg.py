@@ -54,9 +54,12 @@ class RunningCogModel:
         if loaded_model == self.image:
             logging.info(f"Model already loaded: {self.image}")
             return
-        if loaded_model is not None:
-            logging.info(f"Killing previous model ({loaded_model})")
-            os.system("docker kill cogmodel")
+        else:
+            try:
+                os.system("docker kill cogmodel")
+                logging.info(f"Killed previous model ({loaded_model})")
+            except: # noqa
+                pass
 
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
         os.system(self.cog_cmd)
