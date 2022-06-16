@@ -35,6 +35,8 @@ class BackgroundCommand:
 
 
 loaded_model = None
+
+
 class RunningCogModel:
     def __init__(self, image, output_path):
         self.image = image
@@ -55,7 +57,7 @@ class RunningCogModel:
         if loaded_model is not None:
             logging.info(f"Killing previous model ({loaded_model})")
             os.system("docker kill cogmodel")
-        
+
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
         os.system(self.cog_cmd)
         loaded_model = self.image
@@ -153,7 +155,7 @@ def clean_folder(folder):
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
         except Exception as e:
-            print('Failed to delete %s. Reason: %s' % (file_path, e))
+            print("Failed to delete %s. Reason: %s" % (file_path, e))
 
 
 # if __name__ == "__main__":
