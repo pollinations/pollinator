@@ -98,9 +98,8 @@ def process_message(message):
 
 def prepare_output_folder(output_path):
     logging.info(f"Mounting output folder: {output_path}")
-    shutil.rmtree(output_path, ignore_errors=True)
     os.makedirs(output_path, exist_ok=True)
-
+    clean_folder(output_path)
     write_folder(output_path, "done", "false")
     write_folder(output_path, "time_start", str(int(time.time())))
 
@@ -143,6 +142,18 @@ def write_folder(path, key, value):
     os.makedirs(path, exist_ok=True)
     with open(f"{path}/{key}", "w") as f:
         f.write(value)
+
+
+def clean_folder(folder):
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print('Failed to delete %s. Reason: %s' % (file_path, e))
 
 
 # if __name__ == "__main__":
