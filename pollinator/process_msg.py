@@ -52,11 +52,18 @@ class RunningCogModel:
     def __enter__(self):
         global loaded_model
         if loaded_model == self.image:
-            if requests.get("http://localhost:5000/").status_code == 200:
+            try:
+                assert (
+                    requests.get(
+                        "http://localhost:5000/",
+                    ).status_code
+                    == 200
+                )
                 logging.info(f"Model already loaded: {self.image}")
                 return
+            except:  # noqa
+                logging.info(f"Loaded model unhealthy, restarting: {self.image}")
         kill_cog_model()
-
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
         os.system(self.cog_cmd)
         loaded_model = self.image
