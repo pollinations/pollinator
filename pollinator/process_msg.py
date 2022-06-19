@@ -43,9 +43,9 @@ class RunningCogModel:
         gpus = "--gpus all"  # TODO check if GPU is available
         # Start cog container
         self.cog_cmd = (
-            f"docker run --rm --detach --name cogmodel --network host "
+            f"bash -c \"docker run --rm --detach --name cogmodel --network host "
             f"--mount type=bind,source={output_path},target=/outputs "
-            f"{gpus} {image}"
+            f"{gpus} {image} &> {output_path}/log\""
         )
         logging.info(f"Initializing cog command: {self.cog_cmd}")
 
@@ -144,7 +144,7 @@ def send_to_cog_container(inputs, output_path):
 
     if response.status_code != 200:
         logging.error(response.text)
-        write_folder(output_path, "log", response.text)
+        write_folder(output_path, "log", response.text, "a")
         write_folder(output_path, "success", "false")
         raise Exception(
             f"Error while sending message to cog container: {response.text}"
@@ -157,9 +157,9 @@ def send_to_cog_container(inputs, output_path):
 
 
 # Since ipfs reads its data from the filesystem we write keys and values to files using this function
-def write_folder(path, key, value):
+def write_folder(path, key, value, mode="w"):
     os.makedirs(path, exist_ok=True)
-    with open(f"{path}/{key}", "w") as f:
+    with open(f"{path}/{key}", mode) as f:
         f.write(value)
 
 
