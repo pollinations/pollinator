@@ -43,9 +43,9 @@ class RunningCogModel:
         gpus = "--gpus all"  # TODO check if GPU is available
         # Start cog container
         self.cog_cmd = (
-            f"bash -c \"docker run --rm --detach --name cogmodel --network host "
+            f'bash -c "docker run --rm --detach --name cogmodel --network host '
             f"--mount type=bind,source={output_path},target=/outputs "
-            f"{gpus} {image} &> {output_path}/log\""
+            f'{gpus} {image} &> {output_path}/log"'
         )
         logging.info(f"Initializing cog command: {self.cog_cmd}")
 
