@@ -1,8 +1,10 @@
+import base64
 import logging
 import os
 import shutil
 import subprocess
 import time
+from mimetypes import guess_extension
 
 import requests
 from retry import retry
@@ -150,6 +152,7 @@ def send_to_cog_container(inputs, output_path):
             f"Error while sending message to cog container: {response.text}"
         )
     else:
+        write_http_response_files(response, output_path)
         write_folder(output_path, "done", "true")
         write_folder(output_path, "success", "true")
 
@@ -173,6 +176,18 @@ def clean_folder(folder):
                 shutil.rmtree(file_path)
         except Exception as e:
             print("Failed to delete %s. Reason: %s" % (file_path, e))
+
+
+def write_http_response_files(response, output_path):
+    try:
+        for i, encoded_file in enumerate(response.json()["output"]):
+            meta, encoded = encoded_file["file"].split(";base64,")
+            extension = guess_extension(meta.split(":")[1])
+            breakpoint()
+            with open(f"{output_path}/out_{i}{extension}", "wb") as f:
+                f.write(base64.b64decode(encoded))
+    except:  # noqa
+        logging.info("http response not written to file")
 
 
 # if __name__ == "__main__":
