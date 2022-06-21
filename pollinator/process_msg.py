@@ -183,13 +183,12 @@ def write_http_response_files(response, output_path):
         for i, encoded_file in enumerate(response.json()["output"]):
             meta, encoded = encoded_file["file"].split(";base64,")
             extension = guess_extension(meta.split(":")[1])
-            breakpoint()
             with open(f"{output_path}/out_{i}{extension}", "wb") as f:
                 f.write(base64.b64decode(encoded))
     except:  # noqa
         logging.info("http response not written to file")
 
 
-# if __name__ == "__main__":
-#     message = {'pollen_id': 'c3ca8c1b484544d78126e49bc2f0bdec', 'notebook': 'latent-diffusion', 'ipfs': 'QmNTsdMxTY4BdcqB9QpjHHDZaxN9uU9QoqWRwpnK55kVM7'}
-#     process_message(message)
+if __name__ == "__main__":
+    message = {"pollen_id": "0f4d29cf132e48b89b86d4d922916be7", "notebook": "voodoohop/dalle-playground", "ipfs": "QmfW4HUN35dqCqBzmtbv96MyRjXHiyhckpULE9SxKUSBvu"}
+    process_message(message)
