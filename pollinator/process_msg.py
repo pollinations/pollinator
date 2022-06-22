@@ -181,12 +181,16 @@ def clean_folder(folder):
 def write_http_response_files(response, output_path):
     try:
         for i, encoded_file in enumerate(response.json()["output"]):
-            meta, encoded = encoded_file["file"].split(";base64,")
+            try:
+                encoded_file = encoded_file["file"]
+            except TypeError:
+                pass  # already a string
+            meta, encoded = encoded_file.split(";base64,")
             extension = guess_extension(meta.split(":")[1])
             with open(f"{output_path}/out_{i}{extension}", "wb") as f:
                 f.write(base64.b64decode(encoded))
-    except:  # noqa
-        logging.info("http response not written to file")
+    except Exception as e:  # noqa
+        logging.info(f"http response not written to file: {type(e)} {e}")
 
 
 if __name__ == "__main__":
