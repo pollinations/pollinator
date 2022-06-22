@@ -9,7 +9,7 @@ from mimetypes import guess_extension
 import requests
 from retry import retry
 
-from pollinator.constants import images
+from pollinator.constants import lookup_model
 from pollinator.ipfs_to_json import ipfs_subfolder_to_json
 
 
@@ -90,7 +90,7 @@ def process_message(message):
     ipfs_root = os.path.abspath("/tmp/ipfs/")
     output_path = os.path.join(ipfs_root, "output")
     input_path = os.path.join(ipfs_root, "input")
-    image = images.get(message["notebook"], None)
+    image = lookup_model(message["notebook"], None)
     if image is None:
         raise ValueError(f"Model not found: {message['notebook']}")
 
@@ -140,7 +140,7 @@ def send_to_cog_container(inputs, output_path):
     payload = {"input": inputs}
     response = requests.post("http://localhost:5000/predictions", json=payload)
 
-    logging.info(f"response: {response} {response.text}")
+    logging.info(f"response: {response}")
 
     write_folder(output_path, "time_start", str(int(time.time())))
 
