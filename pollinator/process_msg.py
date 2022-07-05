@@ -1,13 +1,15 @@
+import base64
 import logging
 import os
 import shutil
 import subprocess
 import time
+from mimetypes import guess_extension
 
 import requests
 from retry import retry
 
-from pollinator.constants import images
+from pollinator.constants import lookup_model
 from pollinator.ipfs_to_json import ipfs_subfolder_to_json
 
 
@@ -88,7 +90,7 @@ def process_message(message):
     ipfs_root = os.path.abspath("/tmp/ipfs/")
     output_path = os.path.join(ipfs_root, "output")
     input_path = os.path.join(ipfs_root, "input")
-    image = images.get(message["notebook"], None)
+    image = lookup_model(message["notebook"], None)
     if image is None:
         raise ValueError(f"Model not found: {message['notebook']}")
 
@@ -138,7 +140,7 @@ def send_to_cog_container(inputs, output_path):
     payload = {"input": inputs}
     response = requests.post("http://localhost:5000/predictions", json=payload)
 
-    logging.info(f"response: {response} {response.text}")
+    logging.info(f"response: {response}")
 
     write_folder(output_path, "time_start", str(int(time.time())))
 
@@ -150,6 +152,7 @@ def send_to_cog_container(inputs, output_path):
             f"Error while sending message to cog container: {response.text}"
         )
     else:
+        write_http_response_files(response, output_path)
         write_folder(output_path, "done", "true")
         write_folder(output_path, "success", "true")
 
@@ -175,6 +178,25 @@ def clean_folder(folder):
             print("Failed to delete %s. Reason: %s" % (file_path, e))
 
 
-# if __name__ == "__main__":
-#     message = {'pollen_id': 'c3ca8c1b484544d78126e49bc2f0bdec', 'notebook': 'latent-diffusion', 'ipfs': 'QmNTsdMxTY4BdcqB9QpjHHDZaxN9uU9QoqWRwpnK55kVM7'}
-#     process_message(message)
+def write_http_response_files(response, output_path):
+    try:
+        for i, encoded_file in enumerate(response.json()["output"]):
+            try:
+                encoded_file = encoded_file["file"]
+            except TypeError:
+                pass  # already a string
+            meta, encoded = encoded_file.split(";base64,")
+            extension = guess_extension(meta.split(":")[1])
+            with open(f"{output_path}/out_{i}{extension}", "wb") as f:
+                f.write(base64.b64decode(encoded))
+    except Exception as e:  # noqa
+        logging.info(f"http response not written to file: {type(e)} {e}")
+
+
+if __name__ == "__main__":
+    message = {
+        "pollen_id": "0f4d29cf132e48b89b86d4d922916be7",
+        "notebook": "voodoohop/dalle-playground",
+        "ipfs": "QmfW4HUN35dqCqBzmtbv96MyRjXHiyhckpULE9SxKUSBvu",
+    }
+    process_message(message)
