@@ -148,6 +148,7 @@ def send_to_cog_container(inputs, output_path):
         logging.error(response.text)
         write_folder(output_path, "log", response.text, "a")
         write_folder(output_path, "success", "false")
+        kill_cog_model()
         raise Exception(
             f"Error while sending message to cog container: {response.text}"
         )
