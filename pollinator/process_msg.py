@@ -94,6 +94,7 @@ def process_message(message):
     if image is None:
         raise ValueError(f"Model not found: {message['notebook']}")
 
+    clean_folder(input_path)
     prepare_output_folder(output_path)
     inputs = fetch_inputs(message["ipfs"])
 
@@ -163,6 +164,7 @@ def write_folder(path, key, value, mode="w"):
 
 
 def clean_folder(folder):
+    os.makedirs(folder, exist_ok=True)
     for filename in os.listdir(folder):
         file_path = os.path.join(folder, filename)
         try:
