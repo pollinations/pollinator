@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import time
+import json
 from mimetypes import guess_extension
 
 import requests
@@ -100,7 +101,7 @@ def process_message(message):
 
     # Write inputs to /input
     for key, value in inputs.items():
-        write_folder(input_path, key, value)
+        write_folder(input_path, key, json.dumps(value))
 
     # Start IPFS syncing
     with BackgroundCommand(

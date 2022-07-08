@@ -42,6 +42,7 @@ def ipfs_subfolder_to_json(cid: str, subdir: str) -> Dict[str, Any]:
 
 # if an argument is passed, it is a cid
 
+
 def main():
     if len(sys.argv) > 1:
         cid = sys.argv[1]
