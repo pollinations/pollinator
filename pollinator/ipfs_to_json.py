@@ -35,8 +35,8 @@ def ipfs_dir_to_json(cid: str):
     return json_dict
 
 
-
 # if an argument is passed, it is a cid
+
 
 def main():
     if len(sys.argv) > 1:
@@ -44,6 +44,7 @@ def main():
         print(ipfs_dir_to_json(cid)["input"])
     else:
         print("Usage: ipfs_to_json.py <cid>")
+
 
 if __name__ == "__main__":
     main()
