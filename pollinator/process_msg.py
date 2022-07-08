@@ -98,11 +98,6 @@ def process_message(message):
     inputs = fetch_inputs(message["ipfs"])
 
     # Write inputs to /input
-    # The reasoning behind having /output and /input was that we could always reproduce the run from the artifact that is produced
-    # And also for the UI to display some information about the model used to create the output
-    # It may have been more consistent to use pollinate --receive instead of fetching the ipfs content via HTTP
-    # But since we're going to switch this out soon it doesn't matter.
-
     for key, value in inputs.items():
         write_folder(input_path, key, value)
 
@@ -160,6 +155,7 @@ def send_to_cog_container(inputs, output_path):
 
 
 # Since ipfs reads its data from the filesystem we write keys and values to files using this function
+# TODO: needs to handle URL values
 def write_folder(path, key, value, mode="w"):
     os.makedirs(path, exist_ok=True)
     with open(f"{path}/{key}", mode) as f:
