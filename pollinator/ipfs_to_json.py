@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 import logging
-from typing import Any, Dict, List
-import requests
 import sys
 import subprocess
 import json
