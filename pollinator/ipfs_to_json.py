@@ -2,48 +2,69 @@
 # coding: utf-8
 import logging
 from typing import Any, Dict, List
+
 import requests
-import sys
-import subprocess
-import json
+
+ipfs_endpoint = "https://ipfs.pollinations.ai/api/v0"
+# ipfs_endpoint = "https://api.nft.storage"
+ipfs_files_endpoint = "https://ipfs.pollinations.ai/ipfs"
+
+
+def first_true(iterable: List, pred):
+    return next(filter(pred, iterable), None)
+
+
+def named_list_to_dict(object_list: List[Dict[str, str]]) -> Dict[str, str]:
+    """Turn [{"name": "some-name", ...}, ...] into {"some-name": ..., ...}"""
+    return {i["Name"]: i for i in object_list}
 
 
 def ipfs_dir_to_json(cid: str):
-    """Get a CID of a dir in IPFS and return a dict. Runs "node /usr/local/bin/getcid-cli.js [cid]
+    """Get a CID of a dir in IPFS and return a dict
     with {filename: filecontent} structure, where
         - files with file extension are skipped
         - filecontents containing a filename are resolved to absolute URIs
     """
-    logging.info(f"Fetching IPFS dir {cid}")
+    object_list = requests.get(f"{ipfs_endpoint}/ls?arg={cid}").json()
+    object_list = object_list["Objects"][0]["Links"]
 
-    # use subprocess to run getcid-cli.js
+    metadata = named_list_to_dict(object_list)
+    contents = {}
+    files = {}  # Name: URI
+    for name, value in metadata.items():
+        uri = f"{ipfs_files_endpoint}/{cid}/{name}"
+        # skip files but track which files are available
+        if "." in name:
+            files[name] = uri
+            continue
+        # Get filecontent
+        content = None
+        if value["Size"] < 250:
+            resp = requests.get(uri)
+            try:
+                content = resp.json()
+            except:  # noqa: E722
+                try:
+                    content = resp.content.decode("utf-8")
+                except:  # noqa: E722
+                    pass
+        if content is None:
+            logging.warning(
+                f"Large file: {name} in {ipfs_files_endpoint}/{value['Hash']} - skipped in json conversion"
+            )
+        contents[name] = content
 
-    proc = subprocess.Popen(
-        ["node", "/usr/local/bin/getcid-cli.js", cid],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    stdout, stderr = proc.communicate()
-    if proc.returncode != 0:
-        logging.error(f"Error while fetching IPFS dir {cid}: {stderr}")
-        sys.exit(1)
+    contents = {key: files.get(value, value) for key, value in contents.items()}
 
-    # parse stdout to json
-    json_str = stdout.decode("utf-8")
-    json_dict = json.loads(json_str)
-
-    return json_dict
+    return contents
 
 
-
-# if an argument is passed, it is a cid
-
-def main():
-    if len(sys.argv) > 1:
-        cid = sys.argv[1]
-        print(ipfs_dir_to_json(cid)["input"])
-    else:
-        print("Usage: ipfs_to_json.py <cid>")
-
-if __name__ == "__main__":
-    main()
+def ipfs_subfolder_to_json(cid: str, subdir: str) -> Dict[str, Any]:
+    """Get the contents of a subdir of a cid as json"""
+    response = requests.get(f"{ipfs_endpoint}/ls?arg={cid}")
+    data = first_true(response.json()["Objects"], pred=lambda i: i["Hash"] == cid)[
+        "Links"
+    ]
+    links = {i["Name"]: i["Hash"] for i in data}
+    inputs = ipfs_dir_to_json(links[subdir])
+    return inputs

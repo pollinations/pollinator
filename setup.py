@@ -13,7 +13,6 @@ setup(
         "click",
         "retry",
         "requests",
-        "json5"
     ],
     extras_require={
         "test": ["pytest", "pylint!=2.5.0", "black", "mypy", "flake8", "pytest-cov"],
