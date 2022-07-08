@@ -2,7 +2,7 @@
 # coding: utf-8
 import logging
 from typing import Any, Dict, List
-
+import json5
 import requests
 
 ipfs_endpoint = "https://ipfs.pollinations.ai/api/v0"
@@ -48,6 +48,11 @@ def ipfs_dir_to_json(cid: str):
                     content = resp.content.decode("utf-8")
                 except:  # noqa: E722
                     pass
+        try:
+            content = json5.loads(content)
+        except: 
+            print("exception when parsing", content," as json")
+            pass
         if content is None:
             logging.warning(
                 f"Large file: {name} in {ipfs_files_endpoint}/{value['Hash']} - skipped in json conversion"
