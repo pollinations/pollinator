@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 import logging
+from typing import Any, Dict, List
 import sys
 import subprocess
 import json
@@ -33,8 +34,13 @@ def ipfs_dir_to_json(cid: str):
     return json_dict
 
 
-# if an argument is passed, it is a cid
+def ipfs_subfolder_to_json(cid: str, subdir: str) -> Dict[str, Any]:
+    """Get the contents of a subdir of a cid as json"""
+    json_dict = ipfs_dir_to_json(cid)
+    return json_dict[subdir]
 
+
+# if an argument is passed, it is a cid
 
 def main():
     if len(sys.argv) > 1:
