@@ -108,7 +108,7 @@ def process_message(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate --send --ipns --nodeid {message['pollen_id']}"
+        f"pollinate-cli.js --send --ipns --nodeid {message['pollen_id']}"
         f" --path {ipfs_root}"
     ):
         with RunningCogModel(image, output_path):
