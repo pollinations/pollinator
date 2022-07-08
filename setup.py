@@ -8,13 +8,7 @@ setup(
     packages=find_packages(),
     package_data={},
     scripts=[],
-    install_requires=[
-        "boto3",
-        "click",
-        "retry",
-        "requests",
-        "json5"
-    ],
+    install_requires=["boto3", "click", "retry", "requests", "json5"],
     extras_require={
         "test": ["pytest", "pylint!=2.5.0", "black", "mypy", "flake8", "pytest-cov"],
     },
