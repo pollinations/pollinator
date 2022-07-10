@@ -1,10 +1,10 @@
 import base64
+import json
 import logging
 import os
 import shutil
 import subprocess
 import time
-import json
 from mimetypes import guess_extension
 
 import requests
@@ -46,9 +46,9 @@ class RunningCogModel:
         gpus = "--gpus all"  # TODO check if GPU is available
         # Start cog container
         self.cog_cmd = (
-            f'bash -c "docker run --rm --detach --name cogmodel --network host '
+            f'bash -c "docker run --rm --name cogmodel --network host '
             f"--mount type=bind,source={output_path},target=/outputs "
-            f'{gpus} {image} &> {output_path}/log"'
+            f'{gpus} {image} &> {output_path}/log" &'
         )
         logging.info(f"Initializing cog command: {self.cog_cmd}")
 
@@ -197,6 +197,6 @@ if __name__ == "__main__":
     message = {
         "pollen_id": "0f4d29cf132e48b89b86d4d922916be7",
         "notebook": "voodoohop/dalle-playground",
-        "ipfs": "QmfW4HUN35dqCqBzmtbv96MyRjXHiyhckpULE9SxKUSBvu",
+        "ipfs": "QmYdTVSzh6MNDBKMG9Z1vqfzomTYWczV3iP15YBupKSsM1",
     }
     process_message(message)
