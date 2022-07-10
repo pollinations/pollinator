@@ -47,7 +47,7 @@ class RunningCogModel:
         # Start cog container
         self.cog_cmd = (
             f'bash -c "docker run --rm --name cogmodel --network host '
-            f"--mount type=bind,source={output_path},target=/outputs"
+            f"--mount type=bind,source={output_path},target=/outputs "
             f'{gpus} {image} &> {output_path}/log" &'
         )
         logging.info(f"Initializing cog command: {self.cog_cmd}")
@@ -197,6 +197,6 @@ if __name__ == "__main__":
     message = {
         "pollen_id": "0f4d29cf132e48b89b86d4d922916be7",
         "notebook": "voodoohop/dalle-playground",
-        "ipfs": "QmfW4HUN35dqCqBzmtbv96MyRjXHiyhckpULE9SxKUSBvu",
+        "ipfs": "QmYdTVSzh6MNDBKMG9Z1vqfzomTYWczV3iP15YBupKSsM1",
     }
     process_message(message)
