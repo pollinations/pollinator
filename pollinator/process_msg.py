@@ -81,8 +81,8 @@ def kill_cog_model():
         os.system("docker kill cogmodel")
         time.sleep(3)  # we have to wait until the container name is available again :/
         logging.info(f"Killed previous model ({loaded_model})")
-    except:  # noqa
-        pass
+    except Exception as e:  # noqa
+        logging.error(f"Error killing cogmodel: {type(e)}{e}")
 
 
 def process_message(message):
@@ -131,7 +131,7 @@ def fetch_inputs(ipfs_cid):
     return inputs
 
 
-@retry(tries=90, delay=2)
+@retry(tries=120, delay=2)
 def send_to_cog_container(inputs, output_path):
     # Send message to cog container
     payload = {"input": inputs}
@@ -145,6 +145,7 @@ def send_to_cog_container(inputs, output_path):
         logging.error(response.text)
         write_folder(output_path, "log", response.text, "a")
         write_folder(output_path, "success", "false")
+        kill_cog_model()
         raise Exception(
             f"Error while sending message to cog container: {response.text}"
         )
