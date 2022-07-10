@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
-import logging
-from typing import Any, Dict, List
-import sys
-import subprocess
 import json
+import logging
+import subprocess
+import sys
+from typing import Any, Dict
 
 
 def ipfs_dir_to_json(cid: str):

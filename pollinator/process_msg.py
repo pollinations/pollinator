@@ -1,10 +1,10 @@
 import base64
+import json
 import logging
 import os
 import shutil
 import subprocess
 import time
-import json
 from mimetypes import guess_extension
 
 import requests
@@ -46,9 +46,9 @@ class RunningCogModel:
         gpus = "--gpus all"  # TODO check if GPU is available
         # Start cog container
         self.cog_cmd = (
-            f'bash -c "docker run --rm --detach --name cogmodel --network host '
-            f"--mount type=bind,source={output_path},target=/outputs "
-            f'{gpus} {image} &> {output_path}/log"'
+            f'bash -c "docker run --rm --name cogmodel --network host '
+            f"--mount type=bind,source={output_path},target=/outputs"
+            f'{gpus} {image} &> {output_path}/log" &'
         )
         logging.info(f"Initializing cog command: {self.cog_cmd}")
 
