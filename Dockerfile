@@ -1,7 +1,8 @@
 from nvidia/cuda:11.5.1-devel-ubuntu20.04
 
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get install -y curl python3-pip git wget ffmpeg libsm6 libxext6
+RUN apt-get clean
+RUN apt-get update && apt-get install -y curl python3-pip git wget ffmpeg libsm6 libxext6
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
 
 
