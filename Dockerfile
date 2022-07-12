@@ -1,4 +1,4 @@
-from nvidia/cuda:11.5.2-devel-ubuntu20.04
+from nvidia/cuda:11.5.1-devel-ubuntu20.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get clean
