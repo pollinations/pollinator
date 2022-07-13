@@ -106,13 +106,22 @@ def process_message(message):
     # Start IPFS syncing
     with BackgroundCommand(
         f"pollinate-cli.js --send --ipns --nodeid {message['pollen_id']} --debounce 200"
-        f" --path {ipfs_root}"
+        f" --path {ipfs_root} > /tmp/cid"
     ):
         with RunningCogModel(image, output_path):
             response = send_to_cog_container(inputs, output_path)
             if response.status_code == 500:
                 kill_cog_model()
+    
+    # read cid from the last line of /tmp/cid
+    with open("/tmp/cid", "r") as f:
+        cid = f.readlines()[-1].strip()
 
+    logging.info("Got CID: " + cid+". Triggering pinning and social post")
+    
+    # run pinning and social post
+    os.sytem(f"node /usr/local/bin/pinning-cli.js {cid}")
+    os.sytem(f"node /usr/local/bin/social-post-cli.js {cid}")
 
 def prepare_output_folder(output_path):
     logging.info(f"Mounting output folder: {output_path}")
