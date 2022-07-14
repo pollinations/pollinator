@@ -122,6 +122,7 @@ def process_message(message):
     # run pinning and social post
     os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
     os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
+    logging.info("done pinning and social post")
 
 def prepare_output_folder(output_path):
     logging.info(f"Mounting output folder: {output_path}")
