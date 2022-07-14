@@ -28,7 +28,7 @@ class BackgroundCommand:
         return self.proc
 
     def __exit__(self, type, value, traceback):
-        time.sleep(20)
+        time.sleep(15)
         logging.info(f"Killing background command: {self.cmd}")
         self.proc.kill()
         logs, errors = self.proc.communicate()
