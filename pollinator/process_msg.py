@@ -163,6 +163,7 @@ def send_to_cog_container(inputs, output_path):
         write_http_response_files(response, output_path)
         write_folder(output_path, "done", "true")
         write_folder(output_path, "success", "true")
+        logging.info(f"Set done to true in {output_path}")
 
     return response
 
