@@ -1,4 +1,5 @@
 import base64
+import datetime as dt
 import json
 import logging
 import os
@@ -10,7 +11,7 @@ from mimetypes import guess_extension
 import requests
 from retry import retry
 
-from pollinator.constants import lookup_model
+from pollinator.constants import available_models
 from pollinator.ipfs_to_json import ipfs_subfolder_to_json
 
 
@@ -86,14 +87,26 @@ def kill_cog_model():
 
 
 def process_message(message):
+    """Message example:
+     {
+        'end_time': None,
+        'image': some-image-with-hash,
+        'input': 'url to ipfs',
+        'logs': None, # to be filled with a url to the log file
+        'output': None, # to be filled with a url to the output folder ipfs
+        'request_submit_time': timestamp,
+        'start_time': # to be filled with now
+    }
+    """
     # start process: pollinate --send --ipns --nodeid nodeid --path /content/ipfs
     logging.info(f"processing message: {message}")
+    message["start_time"] = dt.datetime.now()
     ipfs_root = os.path.abspath("/tmp/ipfs/")
     output_path = os.path.join(ipfs_root, "output")
     input_path = os.path.join(ipfs_root, "input")
-    image = lookup_model(message["notebook"], None)
-    if image is None:
-        raise ValueError(f"Model not found: {message['notebook']}")
+    image = message["image"]
+    if image not in available_models():
+        raise ValueError(f"Model not found: {image}")
 
     clean_folder(input_path)
     prepare_output_folder(output_path)
@@ -112,17 +125,21 @@ def process_message(message):
             response = send_to_cog_container(inputs, output_path)
             if response.status_code == 500:
                 kill_cog_model()
-    
+
+    with open("/tmp/cid", "r") as f:
+        print("\n".join(f.readlines()))
+
     # read cid from the last line of /tmp/cid
     with open("/tmp/cid", "r") as f:
         cid = f.readlines()[-1].strip()
 
-    logging.info("Got CID: " + cid+". Triggering pinning and social post")
+    logging.info("Got CID: " + cid + ". Triggering pinning and social post")
 
     # run pinning and social post
     os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
     os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
     logging.info("done pinning and social post")
+
 
 def prepare_output_folder(output_path):
     logging.info(f"Mounting output folder: {output_path}")

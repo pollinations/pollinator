@@ -5,5 +5,5 @@ model_index = (
 )
 
 
-def lookup_model(key, default=None):
-    return requests.get(model_index).json().get(key, default)
+def available_models():
+    return requests.get(model_index).json().keys()
