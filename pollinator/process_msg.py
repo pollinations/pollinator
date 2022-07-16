@@ -100,7 +100,7 @@ def process_message(message):
     """
     # start process: pollinate --send --ipns --nodeid nodeid --path /content/ipfs
     logging.info(f"processing message: {message}")
-    message["start_time"] = dt.datetime.now()
+    message["start_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     ipfs_root = os.path.abspath("/tmp/ipfs/")
     output_path = os.path.join(ipfs_root, "output")
     input_path = os.path.join(ipfs_root, "input")
@@ -110,7 +110,7 @@ def process_message(message):
 
     clean_folder(input_path)
     prepare_output_folder(output_path)
-    inputs = fetch_inputs(message["ipfs"])
+    inputs = fetch_inputs(message["input"])
 
     # Write inputs to /input
     for key, value in inputs.items():
@@ -118,16 +118,15 @@ def process_message(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate-cli.js --send --ipns --nodeid {message['pollen_id']} --debounce 70"
+        f"pollinate-cli.js --send --ipns --nodeid {message['input']} --debounce 70"
         f" --path {ipfs_root} > /tmp/cid"
     ):
-        with RunningCogModel(image, output_path):
-            response = send_to_cog_container(inputs, output_path)
-            if response.status_code == 500:
-                kill_cog_model()
-
-    with open("/tmp/cid", "r") as f:
-        print("\n".join(f.readlines()))
+        # Update output in pollen db whenever a new file is generated
+        os.system(f"touch {output_path}/dummy")
+        # with RunningCogModel(image, output_path):
+        #     response = send_to_cog_container(inputs, output_path)
+        #     if response.status_code == 500:
+        #         kill_cog_model()
 
     # read cid from the last line of /tmp/cid
     with open("/tmp/cid", "r") as f:
@@ -139,6 +138,9 @@ def process_message(message):
     os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
     os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
     logging.info("done pinning and social post")
+
+    message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    return message
 
 
 def prepare_output_folder(output_path):

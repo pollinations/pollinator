@@ -6,4 +6,5 @@ model_index = (
 
 
 def available_models():
-    return requests.get(model_index).json().keys()
+    return ["majesty"]
+    return requests.get(model_index).json().values() # TODO .keys()

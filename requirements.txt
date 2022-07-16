@@ -1,0 +1,8 @@
+boto3
+click
+retry
+requests
+json5
+realtime
+supabase
+python-dotenv

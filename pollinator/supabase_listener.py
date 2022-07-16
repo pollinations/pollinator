@@ -38,7 +38,7 @@ def callback1(payload):
             'input': 'iyg',
             'logs': None,
             'output': None,
-            'request_submit_time': None,
+            'request_submit_time': '2022-07-16T06:51:15',
             'start_time': None},
         'schema': 'public',
         'table': 'pollen',
@@ -52,7 +52,7 @@ def callback1(payload):
 
     # Update the database entry
     data = (
-        supabase.table("pollens")
+        supabase.table("pollen")
         .update(updated_payload)
         .eq("input", payload["record"]["input"])
         .execute()
@@ -73,5 +73,5 @@ if __name__ == "__main__":
     s.connect()
 
     channel_1 = s.set_channel("realtime:*")
-    channel_1.join().on("INSERT", clb2)
+    channel_1.join().on("INSERT", callback1)
     s.listen()

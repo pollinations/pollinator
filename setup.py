@@ -1,5 +1,10 @@
 from setuptools import find_packages, setup
 
+
+with open("requirements.txt") as f:
+    requirements = f.readlines()
+
+
 setup(
     name="pollinator",
     version=0.1,
@@ -8,15 +13,7 @@ setup(
     packages=find_packages(),
     package_data={},
     scripts=[],
-    install_requires=[
-        "boto3",
-        "click",
-        "retry",
-        "requests",
-        "json5",
-        "realtime==0.1.1a0",
-        "supabase",
-    ],
+    install_requires=requirements,
     extras_require={
         "test": ["pytest", "pylint!=2.5.0", "black", "mypy", "flake8", "pytest-cov"],
     },
