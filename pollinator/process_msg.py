@@ -123,10 +123,10 @@ def process_message(message):
     ):
         # Update output in pollen db whenever a new file is generated
         os.system(f"touch {output_path}/dummy")
-        # with RunningCogModel(image, output_path):
-        #     response = send_to_cog_container(inputs, output_path)
-        #     if response.status_code == 500:
-        #         kill_cog_model()
+        with RunningCogModel(image, output_path):
+            response = send_to_cog_container(inputs, output_path)
+            if response.status_code == 500:
+                kill_cog_model()
 
     # read cid from the last line of /tmp/cid
     with open("/tmp/cid", "r") as f:
