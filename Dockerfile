@@ -48,4 +48,4 @@ RUN pip install .
 
 ENV AWS_REGION="us-east-1"
  
-CMD ["python", "pollinator/supabase_listener.py"]
+CMD ["python", "pollinator/sqs_consumer.py"]
