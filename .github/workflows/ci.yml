@@ -26,6 +26,11 @@ jobs:
       # - run: pytest --cov --cov-fail-under=80
 
   docker-image:
+    if:
+      contains('
+        refs/heads/dev
+        refs/heads/main
+      ', github.ref)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
