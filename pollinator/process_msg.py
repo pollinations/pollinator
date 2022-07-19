@@ -121,12 +121,13 @@ def process_message(message):
         f"pollinate-cli.js --send --ipns --nodeid {message['input']} --debounce 70"
         f" --path {ipfs_root} > /tmp/cid"
     ):
-        # Update output in pollen db whenever a new file is generated
-        os.system(f"touch {output_path}/dummy")
-        with RunningCogModel(image, output_path):
-            response = send_to_cog_container(inputs, output_path)
-            if response.status_code == 500:
-                kill_cog_model()
+        with BackgroundCommand(f"python pollinator/outputs_to_db.py {message['input']}"):
+            # Update output in pollen db whenever a new file is generated
+            os.system(f"touch {output_path}/dummy")
+            with RunningCogModel(image, output_path):
+                response = send_to_cog_container(inputs, output_path)
+                if response.status_code == 500:
+                    kill_cog_model()
 
     # read cid from the last line of /tmp/cid
     with open("/tmp/cid", "r") as f:
