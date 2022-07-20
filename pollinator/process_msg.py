@@ -133,24 +133,25 @@ def process_message(message):
                     success = False
                 else:
                     success = True
+                # read cid from the last line of /tmp/cid
+                with open("/tmp/cid", "r") as f:
+                    cid = f.readlines()[-1].strip()
                 message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                 message["success"] = success
-                with open("/tmp/cid", "r") as f:
-                    message["final_output"] = f.readlines()[-1].strip()
+                message["final_output"] = cid
                 message[
                     "logs"
                 ] = f"https://ipfs.pollinations.ai/ipfs/{message['input']}/output/log"
-                data = (
-                    supabase.table("pollen")
-                    .update(message)
-                    .eq("input", {message["input"]})
-                    .execute()
-                )
+                try:
+                    data = (
+                        supabase.table("pollen")
+                        .update(message)
+                        .eq("input", {message["input"]})
+                        .execute()
+                    )
+                except Exception as e:
+                    print("Supabase error: ", e, type(e))
                 print("Pollen set to done in db: ", data)
-
-    # read cid from the last line of /tmp/cid
-    with open("/tmp/cid", "r") as f:
-        cid = f.readlines()[-1].strip()
 
     logging.info("Got CID: " + cid + ". Triggering pinning and social post")
 
@@ -159,7 +160,6 @@ def process_message(message):
     os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
     logging.info("done pinning and social post")
 
-    message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     return message
 
 
