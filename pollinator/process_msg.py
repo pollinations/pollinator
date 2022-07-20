@@ -140,9 +140,13 @@ def process_message(message):
                 message[
                     "logs"
                 ] = f"https://ipfs.pollinations.ai/ipfs/{message['input']}/output/log"
-                supabase.table("pollen").update(message).eq(
-                    "input", {message["input"]}
-                ).execute()
+                data = (
+                    supabase.table("pollen")
+                    .update(message)
+                    .eq("input", {message["input"]})
+                    .execute()
+                )
+                print("Pollen set to done in db: ", data)
 
     # read cid from the last line of /tmp/cid
     with open("/tmp/cid", "r") as f:
