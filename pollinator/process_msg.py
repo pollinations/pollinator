@@ -11,7 +11,7 @@ from mimetypes import guess_extension
 import requests
 from retry import retry
 
-from pollinator.constants import available_models
+from pollinator.constants import available_models, supabase
 from pollinator.ipfs_to_json import ipfs_subfolder_to_json
 
 
@@ -121,13 +121,28 @@ def process_message(message):
         f"pollinate-cli.js --send --ipns --nodeid {message['input']} --debounce 70"
         f" --path {ipfs_root} > /tmp/cid"
     ):
-        with BackgroundCommand(f"python pollinator/outputs_to_db.py {message['input']}"):
+        with BackgroundCommand(
+            f"python pollinator/outputs_to_db.py {message['input']}"
+        ):
             # Update output in pollen db whenever a new file is generated
             os.system(f"touch {output_path}/dummy")
             with RunningCogModel(image, output_path):
                 response = send_to_cog_container(inputs, output_path)
                 if response.status_code == 500:
                     kill_cog_model()
+                    success = False
+                else:
+                    success = True
+                message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+                message["success"] = success
+                with open("/tmp/cid", "r") as f:
+                    message["final_output"] = f.readlines()[-1].strip()
+                message[
+                    "logs"
+                ] = f"https://ipfs.pollinations.ai/ipfs/{message['input']}/output/log"
+                supabase.table("pollen").update(message).eq(
+                    "input", {message["input"]}
+                ).execute()
 
     # read cid from the last line of /tmp/cid
     with open("/tmp/cid", "r") as f:
