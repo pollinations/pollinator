@@ -143,15 +143,12 @@ def process_message(message):
                     "logs"
                 ] = f"https://ipfs.pollinations.ai/ipfs/{message['input']}/output/log"
                 try:
-                    data = (
-                        supabase.table("pollen")
-                        .update(message)
-                        .eq("input", {message["input"]})
-                        .execute()
-                    )
+                    update = dict(**message)
+                    update.pop("input")
+                    data = supabase.table("pollen").update(update).eq("input", message["input"]).execute()
+                    print("Pollen set to done in db: ", data)
                 except Exception as e:
                     print("Supabase error: ", e, type(e))
-                print("Pollen set to done in db: ", data)
 
     logging.info("Got CID: " + cid + ". Triggering pinning and social post")
 
@@ -243,10 +240,9 @@ def write_http_response_files(response, output_path):
         logging.info(f"http response not written to file: {type(e)} {e}")
 
 
-if __name__ == "__main__":
-    message = {
-        "pollen_id": "0f4d29cf132e48b89b86d4d922916be7",
-        "notebook": "voodoohop/dalle-playground",
-        "ipfs": "QmYdTVSzh6MNDBKMG9Z1vqfzomTYWczV3iP15YBupKSsM1",
-    }
-    process_message(message)
+# if __name__ == "__main__":
+#     message = {
+#         "input": "QmNgrCgddkXpRhiZVYHuuuM5KCu4DJDPP9F1K9kW99etfY",
+#         "image": "majesty"
+#     }
+#     process_message(message)
