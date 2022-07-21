@@ -145,7 +145,13 @@ def process_message(message):
                 try:
                     update = dict(**message)
                     update.pop("input")
-                    data = supabase.table("pollen").update(update).eq("input", message["input"]).execute()
+                    update.pop("output")
+                    data = (
+                        supabase.table("pollen")
+                        .update(update)
+                        .eq("input", message["input"])
+                        .execute()
+                    )
                     print("Pollen set to done in db: ", data)
                 except Exception as e:
                     print("Supabase error: ", e, type(e))
