@@ -8,6 +8,7 @@ import time
 
 import click
 
+from pollinator import constants
 from pollinator.constants import supabase
 
 
@@ -20,7 +21,7 @@ def main(pollen_input_id: str):
             cids = [i.strip() for i in f.readlines()]
         if len(cids) > written_cids:
             data = (
-                supabase.table("pollen")
+                supabase.table(constants.db_name)
                 .update({"output": cids})
                 .eq("input", pollen_input_id)
                 .execute()

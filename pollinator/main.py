@@ -1,19 +1,20 @@
-import json
 import logging
-import os
 import time
 
-import botocore
+import click
 from realtime.connection import Socket
-from retry import retry
 
+from pollinator import constants
 from pollinator.constants import supabase, supabase_api_key, supabase_id
 from pollinator.process_msg import loaded_model, process_message
 
 logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.INFO)
 
 
-def main():
+@click.command()
+@click.option("--db_name", default=constants.db_name, help="Name of the db to use.")
+def main(db_name):
+    constants.db_name = db_name
     """First finish all existing tasks, then go into infinite loop"""
     finish_all_tasks()
     subscribe_while_idle()
@@ -30,7 +31,7 @@ def get_task_from_db():
     If there are many, return the olderst one for the currently loaded_model.
     If there are none for the loaded_model, return the oldest."""
     data = (
-        supabase.table("pollen")
+        supabase.table(constants.db_name)
         .select("*")
         .eq("processing_started", False)
         .eq("image", loaded_model)
@@ -41,7 +42,7 @@ def get_task_from_db():
         return data.data[0]
     # No tasks found, include tasks for other images
     data = (
-        supabase.table("pollen")
+        supabase.table(constants.db_name)
         .select("*")
         .eq("processing_started", False)
         .order("request_submit_time")
@@ -56,7 +57,7 @@ def get_task_from_db():
 def maybe_process(message):
     if message["image"] != loaded_model:
         logging.info(
-            f"Message is not for this model, waiting a bit to give other workers a chance"
+            "Message is not for this model, waiting a bit to give other workers a chance"
         )
         time.sleep(1)
     try:
@@ -73,14 +74,14 @@ class LockError(Exception):
 def lock_message(message):
     """Lock the message in the db and throw an error if it is already locked"""
     data = (
-        supabase.table("pollen")
+        supabase.table(constants.db_name)
         .update({"processing_started": True})
         .eq("input", message["input"])
         .eq("processing_started", False)
         .execute()
     )
     if len(data.data) == 0:
-        raise LockError(f"Message {message['id']} is already locked")
+        raise LockError(f"Message {message['input']} is already locked")
 
 
 def subscribe_while_idle():
@@ -93,7 +94,7 @@ def subscribe_while_idle():
         try:
             s.connect()
 
-            channel = s.set_channel("realtime:*")
+            channel = s.set_channel(f"realtime:public:{constants.db_name}")
 
             def unsubscribe_and_process(payload):
                 channel.off("INSERT")
