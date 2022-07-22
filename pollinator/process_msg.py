@@ -11,8 +11,13 @@ from mimetypes import guess_extension
 import requests
 from retry import retry
 
-from pollinator.constants import available_models, supabase
+from pollinator import constants
+from pollinator.constants import available_models, supabase, test_image
 from pollinator.ipfs_to_json import ipfs_subfolder_to_json
+
+ipfs_root = os.path.abspath("/tmp/ipfs/")
+output_path = os.path.join(ipfs_root, "output")
+input_path = os.path.join(ipfs_root, "input")
 
 
 class BackgroundCommand:
@@ -32,10 +37,12 @@ class BackgroundCommand:
         time.sleep(15)
         logging.info(f"Killing background command: {self.cmd}")
         self.proc.kill()
-        logs, errors = self.proc.communicate()
-        logging.info(f"   Logs: {logs}")
-        logging.error(f"   errors: {errors}")
-        logging.info("killed")
+        try:
+            logs, errors = self.proc.communicate(timeout=2)
+            logging.info(f"   Logs: {logs}")
+            logging.error(f"   errors: {errors}")
+        except subprocess.TimeoutExpired:
+            pass
 
 
 loaded_model = None
@@ -44,10 +51,10 @@ loaded_model = None
 class RunningCogModel:
     def __init__(self, image, output_path):
         self.image = image
-        gpus = "--gpus all"  # TODO check if GPU is available
+        gpus = "--gpus all" if image != test_image else ""
         # Start cog container
         self.cog_cmd = (
-            f'bash -c "docker run --rm --name cogmodel --network host '
+            f'bash -c "docker run --rm --name cogmodel -p 5000:5000 '
             f"--mount type=bind,source={output_path},target=/outputs "
             f'{gpus} {image} &> {output_path}/log" &'
         )
@@ -87,6 +94,46 @@ def kill_cog_model():
 
 
 def process_message(message):
+    logging.info(f"processing message: {message}")
+    updated_message = {}
+    updated_message["start_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    response = None
+    try:
+        response, success = start_container_and_perform_request_and_send_outputs(
+            message
+        )
+        updated_message["success"] = success
+    except Exception as e:
+        logging.error(e)
+        updated_message["success"] = False
+
+    try:
+        with open("/tmp/cid", "r") as f:
+            cid = f.readlines()[-1].strip()
+        logging.info("Got CID: " + cid + ". Triggering pinning and social post")
+        # run pinning and social post
+        os.system(f"node /usr/local/bin/pinning-cli.js {cid} &")
+        os.system(f"node /usr/local/bin/social-post-cli.js {cid} &")
+        logging.info("done pinning and social post")
+    except:  # noqa
+        cid = None
+    updated_message["final_output"] = cid
+    updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    updated_message[
+        "logs"
+    ] = f"https://ipfs.pollinations.ai/ipfs/{message['input']}/output/log"
+
+    data = (
+        supabase.table(constants.db_name)
+        .update(updated_message)
+        .eq("input", message["input"])
+        .execute()
+    )
+    print("Pollen set to done in db: ", data)
+    return response
+
+
+def start_container_and_perform_request_and_send_outputs(message):
     """Message example:
      {
         'end_time': None,
@@ -99,11 +146,6 @@ def process_message(message):
     }
     """
     # start process: pollinate --send --ipns --nodeid nodeid --path /content/ipfs
-    logging.info(f"processing message: {message}")
-    message["start_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    ipfs_root = os.path.abspath("/tmp/ipfs/")
-    output_path = os.path.join(ipfs_root, "output")
-    input_path = os.path.join(ipfs_root, "input")
     image = message["image"]
     if image not in available_models():
         raise ValueError(f"Model not found: {image}")
@@ -134,36 +176,7 @@ def process_message(message):
                 else:
                     success = True
                 # read cid from the last line of /tmp/cid
-                with open("/tmp/cid", "r") as f:
-                    cid = f.readlines()[-1].strip()
-                message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-                message["success"] = success
-                message["final_output"] = cid
-                message[
-                    "logs"
-                ] = f"https://ipfs.pollinations.ai/ipfs/{message['input']}/output/log"
-                try:
-                    update = dict(**message)
-                    update.pop("input")
-                    update.pop("output")
-                    data = (
-                        supabase.table("pollen")
-                        .update(update)
-                        .eq("input", message["input"])
-                        .execute()
-                    )
-                    print("Pollen set to done in db: ", data)
-                except Exception as e:
-                    print("Supabase error: ", e, type(e))
-
-    logging.info("Got CID: " + cid + ". Triggering pinning and social post")
-
-    # run pinning and social post
-    os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
-    os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
-    logging.info("done pinning and social post")
-
-    return message
+    return message, success
 
 
 def prepare_output_folder(output_path):
