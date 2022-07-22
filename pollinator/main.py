@@ -88,18 +88,23 @@ def subscribe_while_idle():
     As soon as one arrives, unsubscribe and return the message."""
     url = f"wss://{supabase_id}.supabase.co/realtime/v1/websocket?apikey={supabase_api_key}&vsn=1.0.0"
     s = Socket(url)
-    s.connect()
 
-    channel = s.set_channel("realtime:*")
+    while True:
+        try:
+            s.connect()
 
-    def unsubscribe_and_process(payload):
-        channel.off("INSERT")
-        maybe_process(payload["record"])
-        finish_all_tasks()
-        channel.on("INSERT", unsubscribe_and_process)
+            channel = s.set_channel("realtime:*")
 
-    channel.join().on("INSERT", unsubscribe_and_process)
-    s.listen()
+            def unsubscribe_and_process(payload):
+                channel.off("INSERT")
+                maybe_process(payload["record"])
+                finish_all_tasks()
+                channel.on("INSERT", unsubscribe_and_process)
+
+            channel.join().on("INSERT", unsubscribe_and_process)
+            s.listen()
+        except Exception as e:
+            logging.info(f"Socket stopped listening, restarting: {e}")
 
 
 if __name__ == "__main__":
