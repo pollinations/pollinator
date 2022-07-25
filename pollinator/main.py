@@ -1,5 +1,6 @@
 import logging
 import time
+import traceback
 
 import click
 from realtime.connection import Socket
@@ -55,11 +56,14 @@ def get_task_from_db():
 
 
 def maybe_process(message):
-    if message["image"] != loaded_model:
+    if message["image"] != loaded_model and loaded_model is not None:
         logging.info(
             "Message is not for this model, waiting a bit to give other workers a chance"
         )
         time.sleep(1)
+    elif message["image"] != loaded_model and loaded_model is None:
+        logging.info("No model loaded, wait 0.5s to give other workers a chance")
+        time.sleep(0.5)
     try:
         lock_message(message)
         return process_message(message)
@@ -106,6 +110,7 @@ def subscribe_while_idle():
             s.listen()
         except Exception as e:
             logging.info(f"Socket stopped listening, restarting: {e}")
+            traceback.print_exc()
 
 
 if __name__ == "__main__":

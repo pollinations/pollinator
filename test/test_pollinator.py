@@ -31,7 +31,8 @@ def upload_prompt_to_ipfs(prompt):
             with open(path, "w") as f:
                 f.write(prompt)
         with open("/tmp/cid") as f:
-            cid = f.read().strip()
+            cid = f.read().strip().split("\n")[-1].strip()
+
         return cid
 
 
@@ -39,11 +40,9 @@ def send_valid_dummy_request():
     prompt = uuid4().hex
     cid = upload_prompt_to_ipfs(prompt)
     image = "no-gpu-test-image"
-    data = (
-        supabase.table(constants.db_name)
-        .insert({"input": cid, "image": image})
-        .execute()
-    )
+    payload = {"input": cid, "image": image}
+    print("Insert:", payload)
+    data = supabase.table(constants.db_name).insert(payload).execute()
     assert len(data.data) > 0, f"Failed to insert {cid} into db"
 
 
@@ -107,6 +106,3 @@ def assert_success_is_not(success=None):
     data = supabase.table(constants.db_name).select("*").execute()
     data = [i for i in data.data if i["success"] == success]
     assert len(data) == 0, f"Found {len(data)} with success={success}: {data}"
-
-
-test_many_open_requests_in_db()

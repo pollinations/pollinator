@@ -22,7 +22,7 @@ def main(pollen_input_id: str):
         if len(cids) > written_cids:
             data = (
                 supabase.table(constants.db_name)
-                .update({"output": cids})
+                .update({"output": cids[-1]})
                 .eq("input", pollen_input_id)
                 .execute()
             )
