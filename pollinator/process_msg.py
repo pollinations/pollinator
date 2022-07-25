@@ -110,7 +110,9 @@ def process_message(message):
 
     try:
         with open("/tmp/cid", "r") as f:
-            cid = f.readlines()[-1].strip()
+            contents = f.readlines()
+            cids = [i.strip() for i in contents]
+            cids = [i for i in cids if i != "null"]
         logging.info("Got CID: " + cid + ". Triggering pinning and social post")
         # run pinning and social post
         os.system(f"node /usr/local/bin/pinning-cli.js {cid} &")

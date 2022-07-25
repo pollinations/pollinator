@@ -20,7 +20,9 @@ def main(pollen_input_id: str):
     while True:
         try:
             with open("/tmp/cid") as f:
-                cids = [i.strip() for i in f.readlines()]
+                contents = f.readlines()
+                cids = [i.strip() for i in contents]
+                cids = [i for i in cids if i != "null"]
             if len(cids) > written_cids:
                 data = []
                 while len(data) == 0:
@@ -38,6 +40,7 @@ def main(pollen_input_id: str):
             # I assume this happens when we read the cid file in the wrong moment
             # That's why we just try again
             traceback.print_exc()
+            print("Contents of /tmp/cid:", contents)
 
 
 if __name__ == "__main__":
