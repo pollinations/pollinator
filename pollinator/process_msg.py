@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import time
+import traceback
 from mimetypes import guess_extension
 
 import requests
@@ -109,16 +110,22 @@ def process_message(message):
         updated_message["success"] = False
 
     try:
-        with open("/tmp/cid", "r") as f:
-            contents = f.readlines()
-            cids = [i.strip() for i in contents]
-            cids = [i for i in cids if i != "null"]
+        data = (
+            supabase.table(constants.db_name)
+            .select("*")
+            .eq("input", message["input"])
+            .execute()
+            .data
+        )
+        assert len(data) == 1
+        cid = data[0]["output"]
         logging.info("Got CID: " + cid + ". Triggering pinning and social post")
         # run pinning and social post
         os.system(f"node /usr/local/bin/pinning-cli.js {cid} &")
         os.system(f"node /usr/local/bin/social-post-cli.js {cid} &")
         logging.info("done pinning and social post")
-    except:  # noqa
+    except Exception as e:  # noqa
+        traceback.print_exc()
         cid = None
     updated_message["final_output"] = cid
     updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
@@ -162,21 +169,18 @@ def start_container_and_perform_request_and_send_outputs(message):
     # Start IPFS syncing
     with BackgroundCommand(
         f"pollinate-cli.js --send --ipns --nodeid {message['input']} --debounce 70"
-        f" --path {ipfs_root} > /tmp/cid"
+        f" --path {ipfs_root} | python pollinator/outputs_to_db.py {message['input']}"
     ):
-        with BackgroundCommand(
-            f"python pollinator/outputs_to_db.py {message['input']}"
-        ):
-            # Update output in pollen db whenever a new file is generated
-            os.system(f"touch {output_path}/dummy")
-            with RunningCogModel(image, output_path):
-                response = send_to_cog_container(inputs, output_path)
-                if response.status_code == 500:
-                    kill_cog_model()
-                    success = False
-                else:
-                    success = True
-                # read cid from the last line of /tmp/cid
+        # Update output in pollen db whenever a new file is generated
+        # os.system(f"touch {output_path}/dummy")
+        with RunningCogModel(image, output_path):
+            response = send_to_cog_container(inputs, output_path)
+            if response.status_code == 500:
+                kill_cog_model()
+                success = False
+            else:
+                success = True
+            # read cid from the last line of /tmp/cid
     return message, success
 
 

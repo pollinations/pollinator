@@ -5,9 +5,8 @@ import traceback
 import click
 from realtime.connection import Socket
 
-from pollinator import constants
+from pollinator import constants, process_msg
 from pollinator.constants import supabase, supabase_api_key, supabase_id
-from pollinator import process_msg
 from pollinator.process_msg import process_message
 
 logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.INFO)
@@ -57,12 +56,18 @@ def get_task_from_db():
 
 
 def maybe_process(message):
-    if message["image"] != process_msg.loaded_model and process_msg.loaded_model is not None:
+    if (
+        message["image"] != process_msg.loaded_model
+        and process_msg.loaded_model is not None
+    ):
         logging.info(
             "Message is not for this model, waiting a bit to give other workers a chance"
         )
         time.sleep(1)
-    elif message["image"] != process_msg.loaded_model and process_msg.loaded_model is None:
+    elif (
+        message["image"] != process_msg.loaded_model
+        and process_msg.loaded_model is None
+    ):
         logging.info("No model loaded, wait 0.5s to give other workers a chance")
         time.sleep(0.5)
     try:
