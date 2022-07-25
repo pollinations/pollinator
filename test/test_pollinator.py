@@ -32,7 +32,7 @@ def upload_prompt_to_ipfs(prompt):
                 f.write(prompt)
         with open("/tmp/cid") as f:
             cid = f.read().strip().split("\n")[-1].strip()
-        
+
         return cid
 
 
@@ -42,11 +42,7 @@ def send_valid_dummy_request():
     image = "no-gpu-test-image"
     payload = {"input": cid, "image": image}
     print("Insert:", payload)
-    data = (
-        supabase.table(constants.db_name)
-        .insert(payload)
-        .execute()
-    )
+    data = supabase.table(constants.db_name).insert(payload).execute()
     assert len(data.data) > 0, f"Failed to insert {cid} into db"
 
 

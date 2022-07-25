@@ -62,9 +62,7 @@ def maybe_process(message):
         )
         time.sleep(1)
     elif message["image"] != loaded_model and loaded_model is None:
-        logging.info(
-            "No model loaded, wait 0.5s to give other workers a chance"
-        )
+        logging.info("No model loaded, wait 0.5s to give other workers a chance")
         time.sleep(0.5)
     try:
         lock_message(message)
