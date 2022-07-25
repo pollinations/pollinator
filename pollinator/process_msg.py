@@ -1,4 +1,5 @@
 import base64
+import datetime as dt
 import json
 import logging
 import os
@@ -10,8 +11,13 @@ from mimetypes import guess_extension
 import requests
 from retry import retry
 
-from pollinator.constants import lookup_model
+from pollinator import constants
+from pollinator.constants import available_models, supabase, test_image
 from pollinator.ipfs_to_json import ipfs_subfolder_to_json
+
+ipfs_root = os.path.abspath("/tmp/ipfs/")
+output_path = os.path.join(ipfs_root, "output")
+input_path = os.path.join(ipfs_root, "input")
 
 
 class BackgroundCommand:
@@ -31,10 +37,12 @@ class BackgroundCommand:
         time.sleep(15)
         logging.info(f"Killing background command: {self.cmd}")
         self.proc.kill()
-        logs, errors = self.proc.communicate()
-        logging.info(f"   Logs: {logs}")
-        logging.error(f"   errors: {errors}")
-        logging.info("killed")
+        try:
+            logs, errors = self.proc.communicate(timeout=2)
+            logging.info(f"   Logs: {logs}")
+            logging.error(f"   errors: {errors}")
+        except subprocess.TimeoutExpired:
+            pass
 
 
 loaded_model = None
@@ -43,10 +51,10 @@ loaded_model = None
 class RunningCogModel:
     def __init__(self, image, output_path):
         self.image = image
-        gpus = "--gpus all"  # TODO check if GPU is available
+        gpus = "--gpus all" if image != test_image else ""
         # Start cog container
         self.cog_cmd = (
-            f'bash -c "docker run --rm --name cogmodel --network host '
+            f'bash -c "docker run --rm --name cogmodel -p 5000:5000 '
             f"--mount type=bind,source={output_path},target=/outputs "
             f'{gpus} {image} &> {output_path}/log" &'
         )
@@ -86,18 +94,65 @@ def kill_cog_model():
 
 
 def process_message(message):
-    # start process: pollinate --send --ipns --nodeid nodeid --path /content/ipfs
     logging.info(f"processing message: {message}")
-    ipfs_root = os.path.abspath("/tmp/ipfs/")
-    output_path = os.path.join(ipfs_root, "output")
-    input_path = os.path.join(ipfs_root, "input")
-    image = lookup_model(message["notebook"], None)
-    if image is None:
-        raise ValueError(f"Model not found: {message['notebook']}")
+    updated_message = {}
+    updated_message["start_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    response = None
+    try:
+        response, success = start_container_and_perform_request_and_send_outputs(
+            message
+        )
+        updated_message["success"] = success
+    except Exception as e:
+        logging.error(e)
+        updated_message["success"] = False
+
+    try:
+        with open("/tmp/cid", "r") as f:
+            cid = f.readlines()[-1].strip()
+        logging.info("Got CID: " + cid + ". Triggering pinning and social post")
+        # run pinning and social post
+        os.system(f"node /usr/local/bin/pinning-cli.js {cid} &")
+        os.system(f"node /usr/local/bin/social-post-cli.js {cid} &")
+        logging.info("done pinning and social post")
+    except:  # noqa
+        cid = None
+    updated_message["final_output"] = cid
+    updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    updated_message[
+        "logs"
+    ] = f"https://ipfs.pollinations.ai/ipfs/{message['input']}/output/log"
+
+    data = (
+        supabase.table(constants.db_name)
+        .update(updated_message)
+        .eq("input", message["input"])
+        .execute()
+    )
+    print("Pollen set to done in db: ", data)
+    return response
+
+
+def start_container_and_perform_request_and_send_outputs(message):
+    """Message example:
+     {
+        'end_time': None,
+        'image': some-image-with-hash,
+        'input': 'url to ipfs',
+        'logs': None, # to be filled with a url to the log file
+        'output': None, # to be filled with a url to the output folder ipfs
+        'request_submit_time': timestamp,
+        'start_time': # to be filled with now
+    }
+    """
+    # start process: pollinate --send --ipns --nodeid nodeid --path /content/ipfs
+    image = message["image"]
+    if image not in available_models():
+        raise ValueError(f"Model not found: {image}")
 
     clean_folder(input_path)
     prepare_output_folder(output_path)
-    inputs = fetch_inputs(message["ipfs"])
+    inputs = fetch_inputs(message["input"])
 
     # Write inputs to /input
     for key, value in inputs.items():
@@ -105,24 +160,24 @@ def process_message(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate-cli.js --send --ipns --nodeid {message['pollen_id']} --debounce 70"
+        f"pollinate-cli.js --send --ipns --nodeid {message['input']} --debounce 70"
         f" --path {ipfs_root} > /tmp/cid"
     ):
-        with RunningCogModel(image, output_path):
-            response = send_to_cog_container(inputs, output_path)
-            if response.status_code == 500:
-                kill_cog_model()
-    
-    # read cid from the last line of /tmp/cid
-    with open("/tmp/cid", "r") as f:
-        cid = f.readlines()[-1].strip()
+        with BackgroundCommand(
+            f"python pollinator/outputs_to_db.py {message['input']}"
+        ):
+            # Update output in pollen db whenever a new file is generated
+            os.system(f"touch {output_path}/dummy")
+            with RunningCogModel(image, output_path):
+                response = send_to_cog_container(inputs, output_path)
+                if response.status_code == 500:
+                    kill_cog_model()
+                    success = False
+                else:
+                    success = True
+                # read cid from the last line of /tmp/cid
+    return message, success
 
-    logging.info("Got CID: " + cid+". Triggering pinning and social post")
-
-    # run pinning and social post
-    os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
-    os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
-    logging.info("done pinning and social post")
 
 def prepare_output_folder(output_path):
     logging.info(f"Mounting output folder: {output_path}")
@@ -204,10 +259,9 @@ def write_http_response_files(response, output_path):
         logging.info(f"http response not written to file: {type(e)} {e}")
 
 
-if __name__ == "__main__":
-    message = {
-        "pollen_id": "0f4d29cf132e48b89b86d4d922916be7",
-        "notebook": "voodoohop/dalle-playground",
-        "ipfs": "QmYdTVSzh6MNDBKMG9Z1vqfzomTYWczV3iP15YBupKSsM1",
-    }
-    process_message(message)
+# if __name__ == "__main__":
+#     message = {
+#         "input": "QmNgrCgddkXpRhiZVYHuuuM5KCu4DJDPP9F1K9kW99etfY",
+#         "image": "majesty"
+#     }
+#     process_message(message)

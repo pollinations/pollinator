@@ -29,6 +29,7 @@ def ipfs_dir_to_json(cid: str):
 
     # parse stdout to json
     json_str = stdout.decode("utf-8")
+    print(json_str)
     json_dict = json.loads(json_str)
 
     return json_dict
