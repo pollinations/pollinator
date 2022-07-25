@@ -39,7 +39,7 @@ class BackgroundCommand:
         self.proc.kill()
         try:
             logs, errors = self.proc.communicate(timeout=2)
-            logs, errors = logs.decode('utf-8'), errors.decode('utf-8')
+            logs, errors = logs.decode("utf-8"), errors.decode("utf-8")
             logging.info(f"   Logs: {logs}")
             logging.error(f"   errors: {errors}")
         except subprocess.TimeoutExpired:
@@ -120,9 +120,7 @@ def process_message(message):
         cid = None
     updated_message["final_output"] = cid
     updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    updated_message[
-        "logs"
-    ] = f"https://ipfs.pollinations.ai/ipfs/{cid}/output/log"
+    updated_message["logs"] = f"https://ipfs.pollinations.ai/ipfs/{cid}/output/log"
 
     data = (
         supabase.table(constants.db_name)

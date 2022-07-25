@@ -33,13 +33,11 @@ def main(pollen_input_id: str):
                 written_cids = len(cids)
                 print("Updated: ", data)
             time.sleep(0.1)
-        except Exception as e:
+        except Exception: # noqa
             # Sometimes we read broken cids that cannot be written to db
             # I assume this happens when we read the cid file in the wrong moment
             # That's why we just try again
             traceback.print_exc()
-            
-
 
 
 if __name__ == "__main__":
