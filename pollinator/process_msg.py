@@ -36,15 +36,8 @@ class BackgroundCommand:
         return self.proc
 
     def __exit__(self, type, value, traceback):
-        time.sleep(15)
         logging.info(f"Killing background command: {self.cmd}")
-        # self.proc.kill()
-        print(f"Killing process {self.proc.pid} and their complete family")
-        parent = psutil.Process(self.proc.pid)
-        for child in parent.children(recursive=True):
-            print(f"Killing child: {child} {child.pid}")
-            child.kill()
-        parent.kill()
+        tree_kill(self.proc.pid)
         try:
             logs, errors = self.proc.communicate(timeout=2)
             logs, errors = logs.decode("utf-8"), errors.decode("utf-8")
@@ -175,8 +168,7 @@ def start_container_and_perform_request_and_send_outputs(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate-cli.js --send --ipns --nodeid {message['input']} --debounce 70"
-        f" --path {ipfs_root} | python pollinator/outputs_to_db.py {message['input']}"
+        f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} | python pollinator/outputs_to_db.py {message['input']}"
     ):
         # Update output in pollen db whenever a new file is generated
         # os.system(f"touch {output_path}/dummy")
@@ -187,6 +179,10 @@ def start_container_and_perform_request_and_send_outputs(message):
                 success = False
             else:
                 success = True
+    # Now send final results once
+    os.system(
+        f"pollinate-cli.js --send --path {ipfs_root} --once | python pollinator/outputs_to_db.py {message['input']}",
+    )
     return message, success
 
 
@@ -268,6 +264,15 @@ def write_http_response_files(response, output_path):
                 f.write(base64.b64decode(encoded))
     except Exception as e:  # noqa
         logging.info(f"http response not written to file: {type(e)} {e}")
+
+
+def tree_kill(pid):
+    print(f"Killing process {pid} and their complete family")
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        print(f"Killing child: {child} {child.pid}")
+        child.kill()
+    parent.kill()
 
 
 # if __name__ == "__main__":

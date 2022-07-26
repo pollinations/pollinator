@@ -16,6 +16,7 @@ from pollinator.constants import supabase
 @click.argument("pollen_input_id", type=str)
 def main(pollen_input_id: str):
     for cid in sys.stdin:
+        cid = cid.strip()
         try:
             data = (
                 supabase.table(constants.db_name)
