@@ -1,9 +1,8 @@
 """
 Usage:
 python pollinator/outputs_to_db.py {message['input']}
-
-Watches /tmp/cid and writes its content into the output field as a json list
 """
+import sys
 import traceback
 
 import click
@@ -16,17 +15,15 @@ from pollinator.constants import supabase
 @click.command()
 @click.argument("pollen_input_id", type=str)
 def main(pollen_input_id: str):
-    while True:
+    for cid in sys.stdin:
         try:
-            cid = input()
-            data = []
-            while len(data) == 0:
-                data = (
-                    supabase.table(constants.db_name)
-                    .update({"output": cid})
-                    .eq("input", pollen_input_id)
-                    .execute()
-                ).data
+            data = (
+                supabase.table(constants.db_name)
+                .update({"output": cid})
+                .eq("input", pollen_input_id)
+                .execute()
+            )
+            assert len(data.data) == 1
         except APIError:  # noqa
             # Sometimes we read broken cids that cannot be written to db
             # I assume this happens when we read the cid file in the wrong moment

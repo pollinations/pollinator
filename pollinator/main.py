@@ -107,10 +107,14 @@ def subscribe_while_idle():
             channel = s.set_channel(f"realtime:public:{constants.db_name}")
 
             def unsubscribe_and_process(payload):
-                channel.off("INSERT")
+                if constants.i_am_busy:
+                    print("Ignoring task, am busy")
+                    return
+                constants.i_am_busy = True
                 maybe_process(payload["record"])
                 finish_all_tasks()
-                channel.on("INSERT", unsubscribe_and_process)
+                constants.i_am_busy = False
+                print("Ready to accept a task")
 
             channel.join().on("INSERT", unsubscribe_and_process)
             s.listen()

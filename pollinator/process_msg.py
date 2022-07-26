@@ -9,6 +9,7 @@ import time
 import traceback
 from mimetypes import guess_extension
 
+import psutil
 import requests
 from retry import retry
 
@@ -37,7 +38,13 @@ class BackgroundCommand:
     def __exit__(self, type, value, traceback):
         time.sleep(15)
         logging.info(f"Killing background command: {self.cmd}")
-        self.proc.kill()
+        # self.proc.kill()
+        print(f"Killing process {self.proc.pid} and their complete family")
+        parent = psutil.Process(self.proc.pid)
+        for child in parent.children(recursive=True):
+            print(f"Killing child: {child} {child.pid}")
+            child.kill()
+        parent.kill()
         try:
             logs, errors = self.proc.communicate(timeout=2)
             logs, errors = logs.decode("utf-8"), errors.decode("utf-8")
@@ -121,8 +128,8 @@ def process_message(message):
         cid = data[0]["output"]
         logging.info("Got CID: " + cid + ". Triggering pinning and social post")
         # run pinning and social post
-        os.system(f"node /usr/local/bin/pinning-cli.js {cid} &")
-        os.system(f"node /usr/local/bin/social-post-cli.js {cid} &")
+        os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
+        os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
         logging.info("done pinning and social post")
     except Exception as e:  # noqa
         traceback.print_exc()
@@ -180,7 +187,6 @@ def start_container_and_perform_request_and_send_outputs(message):
                 success = False
             else:
                 success = True
-            # read cid from the last line of /tmp/cid
     return message, success
 
 

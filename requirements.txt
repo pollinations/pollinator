@@ -6,3 +6,4 @@ json5
 realtime
 supabase
 python-dotenv
+psutil
