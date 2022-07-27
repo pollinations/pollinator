@@ -25,12 +25,12 @@ jobs:
       - run: flake8
 
   docker-image:
-    if:
-      contains('
-        refs/heads/dev
-        refs/heads/main
-        refs/heads/pytest-in-ci
-      ', github.ref)
+    # if:
+    #   contains('
+    #     refs/heads/dev
+    #     refs/heads/main
+    #     refs/heads/pytest-in-ci
+    #   ', github.ref)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -39,6 +39,14 @@ jobs:
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
         id: extract_branch
+      
+      - name: Install cog
+        run: |
+          curl -o /usr/local/bin/cog -L https://github.com/replicate/cog/releases/latest/download/cog_`uname -s`_`uname -m`
+          chmod +x /usr/local/bin/cog
+      
+      - name: Build cog test image
+        run: cd test-cog-image && cog build -t no-gpu-test-image
 
       - name: Build docker image
         run: docker build . -t image:test
@@ -49,7 +57,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ID: ${{ secrets.SUPABASE_ID }}
         run: |
-          docker run -e SUPABASE_API_KEY=$SUPABASE_API_KEY -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_ID=$SUPABASE_ID image:test pytest test
+          docker run -v /var/run/docker.sock:/var/run/docker.sock -e SUPABASE_API_KEY=$SUPABASE_API_KEY -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_ID=$SUPABASE_ID image:test pytest test
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
