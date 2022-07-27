@@ -7,3 +7,4 @@ realtime
 supabase
 python-dotenv
 psutil
+pytest

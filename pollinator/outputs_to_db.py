@@ -14,17 +14,16 @@ from pollinator.constants import supabase
 
 @click.command()
 @click.argument("pollen_input_id", type=str)
-def main(pollen_input_id: str):
+@click.argument("db_name", type=str)
+def main(pollen_input_id: str, db_name: str):
     for cid in sys.stdin:
         cid = cid.strip()
         try:
-            data = (
-                supabase.table(constants.db_name)
+            while len(supabase.table(db_name)
                 .update({"output": cid})
                 .eq("input", pollen_input_id)
-                .execute()
-            )
-            assert len(data.data) == 1
+                .execute().data) != 1:
+                print(f"Failed to update: {pollen_input_id} (with output={cid}), trying again...")
         except APIError:  # noqa
             # Sometimes we read broken cids that cannot be written to db
             # I assume this happens when we read the cid file in the wrong moment

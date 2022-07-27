@@ -168,7 +168,8 @@ def start_container_and_perform_request_and_send_outputs(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} | python pollinator/outputs_to_db.py {message['input']}"
+        f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} "
+        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}"
     ):
         # Update output in pollen db whenever a new file is generated
         # os.system(f"touch {output_path}/dummy")
@@ -181,7 +182,8 @@ def start_container_and_perform_request_and_send_outputs(message):
                 success = True
     # Now send final results once
     os.system(
-        f"pollinate-cli.js --send --path {ipfs_root} --once | python pollinator/outputs_to_db.py {message['input']}",
+        f"pollinate-cli.js --send --path {ipfs_root} --once "
+        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}",
     )
     return message, success
 

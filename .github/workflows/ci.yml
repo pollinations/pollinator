@@ -7,7 +7,7 @@ on:
     tags: "*"
 
 jobs:
-  test:
+  linting:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -24,18 +24,12 @@ jobs:
       - run: black --check .
       - run: flake8
 
-      - name: Run tests
-        env:
-          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ID: ${{ secrets.SUPABASE_ID }}
-        run: pytest test
-
   docker-image:
     if:
       contains('
         refs/heads/dev
         refs/heads/main
+        refs/heads/pytest-in-ci
       ', github.ref)
     runs-on: ubuntu-latest
     steps:
@@ -48,6 +42,14 @@ jobs:
 
       - name: Build docker image
         run: docker build . -t image:test
+      
+      - name: Run tests
+        env:
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ID: ${{ secrets.SUPABASE_ID }}
+        run: |
+          docker run -e SUPABASE_API_KEY=$SUPABASE_API_KEY -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_ID=$SUPABASE_ID image:test pytest test
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
