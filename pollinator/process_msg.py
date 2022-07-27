@@ -79,7 +79,7 @@ class RunningCogModel:
         kill_cog_model()
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
         self.proc = subprocess.Popen(
-            self.cmd,
+            self.cog_cmd,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
