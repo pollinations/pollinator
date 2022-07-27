@@ -78,12 +78,23 @@ class RunningCogModel:
                 logging.info(f"Loaded model unhealthy, restarting: {self.image}")
         kill_cog_model()
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
-        os.system(self.cog_cmd)
+        self.proc = subprocess.Popen(
+            self.cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         loaded_model = self.image
 
     def __exit__(self, type, value, traceback):
         # we leave the model running in case the next request needs the same model
-        pass
+        try:
+            logs, errors = self.proc.communicate(timeout=2)
+            logs, errors = logs.decode("utf-8"), errors.decode("utf-8")
+            logging.info(f"   Logs: {logs}")
+            logging.error(f"   errors: {errors}")
+        except subprocess.TimeoutExpired:
+            pass
 
 
 def kill_cog_model():
