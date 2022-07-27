@@ -27,7 +27,9 @@ def upload_prompt_to_ipfs(prompt):
         path = f"{tmpdir}/input/Prompt"
         with open(path, "w") as f:
             f.write(prompt)
-        os.system(f"pollinate-cli.js --send --ipns --debounce 70 --path {tmpdir} --once > /tmp/cid")
+        os.system(
+            f"pollinate-cli.js --send --ipns --debounce 70 --path {tmpdir} --once > /tmp/cid"
+        )
         with open("/tmp/cid") as f:
             cid = f.read().strip().split("\n")[-1].strip()
         print(f"Uploaded {prompt} to ipfs as {cid}")
