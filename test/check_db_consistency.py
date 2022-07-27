@@ -1,5 +1,5 @@
-from pollinator.constants import supabase
 from pollinator import constants
+from pollinator.constants import supabase
 from pollinator.ipfs_to_json import ipfs_subfolder_to_json
 
 
