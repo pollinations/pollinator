@@ -23,7 +23,7 @@ jobs:
       - run: isort --diff .
       - run: black --check .
       - run: flake8
-      # - run: pytest --cov --cov-fail-under=80
+      - run: pytest test
 
   docker-image:
     if:
