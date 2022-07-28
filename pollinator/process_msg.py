@@ -203,7 +203,7 @@ def fetch_inputs(ipfs_cid):
     return inputs
 
 
-@retry(tries=120, delay=2)
+@retry(tries=450, delay=2)
 def send_to_cog_container(inputs, output_path):
     # Send message to cog container
     payload = {"input": inputs}
