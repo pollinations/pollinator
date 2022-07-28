@@ -19,9 +19,9 @@ SPAM_DELAY=0.1
 MAX_LENGTH=1000
 
 function send_to_discord {
-    local message=$ID - ${1//\"/\\\"}
+    local message=${1//\"/\\\"}
     echo "$message" | awk -v len=${MAX_LENGTH} '{ if (length($0) > len) print substr($0, 1, len-3) "..."; else print; }'
-    local content="{\"content\": \"${message}\"}"
+    local content="{\"content\": \"${ID} - ${message}\"}"
 
 
     # the sed contraption from depths of abyss at the end extracts message id from
