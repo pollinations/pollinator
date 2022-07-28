@@ -215,8 +215,7 @@ def send_to_cog_container(inputs, output_path):
 
     if response.status_code != 200:
         logging.error(response.text)
-        write_folder(output_path, "log", response.text, "a")
-        write_folder(output_path, "success", "false")
+        write_folder(output_path, "cog_response", response.text, "a")
         kill_cog_model()
         raise Exception(
             f"Error while sending message to cog container: {response.text}"
@@ -224,7 +223,6 @@ def send_to_cog_container(inputs, output_path):
     else:
         write_http_response_files(response, output_path)
         write_folder(output_path, "done", "true")
-        write_folder(output_path, "success", "true")
         logging.info(f"Set done to true in {output_path}")
 
     return response
