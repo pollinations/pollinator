@@ -30,6 +30,7 @@ def upload_prompt_to_ipfs(prompt):
         ):
             with open(path, "w") as f:
                 f.write(prompt)
+
         with open("/tmp/cid") as f:
             cid = f.read().strip().split("\n")[-1].strip()
 
