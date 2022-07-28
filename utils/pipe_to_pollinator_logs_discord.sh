@@ -5,6 +5,10 @@
 
 set -eu
 
+# generate short random id using openssl
+ID=$(openssl rand -hex 2)
+
+
 # discord webhook url, pay attention to add ?wait=true at the end
 WEBHOOK_URL='https://discord.com/api/webhooks/1002128254871810129/oWSxYluan9mlrK4LrduiKxvi8kyiKWAuRPGZWDvbpnboT6Pa-KPjs6RVMtwLGYTbyhSs'
 # grep filter per line, lines not matching won't be sent
@@ -15,7 +19,7 @@ SPAM_DELAY=0.1
 MAX_LENGTH=1000
 
 function send_to_discord {
-    local message=${1//\"/\\\"}
+    local message=$ID - ${1//\"/\\\"}
     echo "$message" | awk -v len=${MAX_LENGTH} '{ if (length($0) > len) print substr($0, 1, len-3) "..."; else print; }'
     local content="{\"content\": \"${message}\"}"
 
