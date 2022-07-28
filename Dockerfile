@@ -48,4 +48,4 @@ RUN pip install .
 
 ENV AWS_REGION="us-east-1"
  
-CMD ["python", "pollinator/main.py", "|","utils/pipe_to_pollinator_logs_discord.sh"]
+CMD ["python", "pollinator/main.py", "|&","utils/pipe_to_pollinator_logs_discord.sh"]
