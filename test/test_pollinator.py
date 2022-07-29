@@ -25,20 +25,11 @@ def upload_prompt_to_ipfs(prompt):
     with tempfile.TemporaryDirectory() as tmpdir:
         os.makedirs(os.path.join(tmpdir, "input"))
         path = f"{tmpdir}/input/Prompt"
-<<<<<<< HEAD
-        with BackgroundCommand(
-            f"pollinate-cli.js --send --ipns --debounce 70 --path {tmpdir} > /tmp/cid"
-        ):
-            with open(path, "w") as f:
-                f.write(prompt)
-
-=======
         with open(path, "w") as f:
             f.write(prompt)
         os.system(
             f"pollinate-cli.js --send --ipns --debounce 70 --path {tmpdir} --once > /tmp/cid"
         )
->>>>>>> pytest-in-ci
         with open("/tmp/cid") as f:
             cid = f.read().strip().split("\n")[-1].strip()
         print(f"Uploaded {prompt} to ipfs as {cid}")
