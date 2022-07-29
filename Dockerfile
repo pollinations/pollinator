@@ -48,4 +48,4 @@ RUN pip install .
 
 ENV AWS_REGION="us-east-1"
  
-CMD ["python", "pollinator/main.py"]
+CMD ["python", "pollinator/main.py", "--db_name", "pollen"]
