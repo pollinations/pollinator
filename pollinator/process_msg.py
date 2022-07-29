@@ -137,7 +137,7 @@ def process_message(message):
 
     except Exception as e:  # noqa
         traceback.print_exc()
-    
+
     return response
 
 
