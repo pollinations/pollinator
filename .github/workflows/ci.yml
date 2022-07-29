@@ -12,6 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Check that all debug statements are removed
+        run: |
+          find . -name "*.py" -exec grep -H "breakpoint" {} \; | grep breakpoint && exit 1
+          find . -name "*.py" -exec grep -H "DEBUG" {} \; | grep "DEBUG" && exit 1
+
       - name: Setup Python
         uses: actions/setup-python@v1
         with:
