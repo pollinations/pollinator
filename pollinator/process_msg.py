@@ -205,9 +205,6 @@ def fetch_inputs(ipfs_cid):
 
 @retry(tries=120, delay=2)
 def send_to_cog_container(inputs, output_path):
-    with open("/tmp/ipfs/output/log", "r") as f:
-        for line in f.readlines():
-            logging.info(f"Container logs: {line}")
     # Send message to cog container
     payload = {"input": inputs}
     response = requests.post("http://localhost:5000/predictions", json=payload)

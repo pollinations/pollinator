@@ -68,7 +68,7 @@ def test_many_open_requests_in_db():
     for _ in range(2):
         send_valid_dummy_request()
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
-        time.sleep(120)
+        time.sleep(30)
     assert_success_is_not(None)
     assert_success_is_not(False)
 
@@ -82,7 +82,7 @@ def test_no_open_request_subscribe_and_wait():
         time.sleep(30)
         for _ in range(2):
             send_valid_dummy_request()
-        time.sleep(120)
+        time.sleep(30)
     assert_success_is_not(None)
     assert_success_is_not(False)
 
@@ -96,7 +96,7 @@ def test_invalid_request_in_db():
         time.sleep(30)
         for _ in range(2):
             send_invalid_dummy_request()
-        time.sleep(60)
+        time.sleep(30)
     assert_success_is_not(None)
     assert_success_is_not(True)
 
