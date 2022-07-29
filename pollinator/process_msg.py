@@ -78,23 +78,11 @@ class RunningCogModel:
                 logging.info(f"Loaded model unhealthy, restarting: {self.image}")
         kill_cog_model()
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
-        self.proc = subprocess.Popen(
-            self.cog_cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        os.system(self.cog_cmd)
         loaded_model = self.image
 
     def __exit__(self, type, value, traceback):
-        # we leave the model running in case the next request needs the same model
-        try:
-            logs, errors = self.proc.communicate(timeout=2)
-            logs, errors = logs.decode("utf-8"), errors.decode("utf-8")
-            logging.info(f"   Logs: {logs}")
-            logging.error(f"   errors: {errors}")
-        except subprocess.TimeoutExpired:
-            pass
+        pass
 
 
 def kill_cog_model():
@@ -130,25 +118,26 @@ def process_message(message):
         )
         assert len(data) == 1
         cid = data[0]["output"]
-        logging.info("Got CID: " + cid + ". Triggering pinning and social post")
+
+        data = (
+            supabase.table(constants.db_name)
+            .update(updated_message)
+            .eq("input", message["input"])
+            .execute()
+        )
+        print("Pollen set to done in db: ", data)
+        logging.info(f"Got CID: {cid}. Triggering pinning and social post")
         # run pinning and social post
         os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
         os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
         logging.info("done pinning and social post")
+        updated_message["final_output"] = cid
+        updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        updated_message["logs"] = f"https://ipfs.pollinations.ai/ipfs/{cid}/output/log"
+
     except Exception as e:  # noqa
         traceback.print_exc()
-        cid = None
-    updated_message["final_output"] = cid
-    updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    updated_message["logs"] = f"https://ipfs.pollinations.ai/ipfs/{cid}/output/log"
-
-    data = (
-        supabase.table(constants.db_name)
-        .update(updated_message)
-        .eq("input", message["input"])
-        .execute()
-    )
-    print("Pollen set to done in db: ", data)
+    
     return response
 
 
@@ -182,8 +171,6 @@ def start_container_and_perform_request_and_send_outputs(message):
         f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} "
         f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}"
     ):
-        # Update output in pollen db whenever a new file is generated
-        # os.system(f"touch {output_path}/dummy")
         with RunningCogModel(image, output_path):
             response = send_to_cog_container(inputs, output_path)
             if response.status_code == 500:
