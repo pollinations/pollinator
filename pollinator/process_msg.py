@@ -107,6 +107,10 @@ def process_message(message):
     except Exception as e:
         logging.error(e)
         updated_message["success"] = False
+    
+    with open("/tmp/ipfs/output/log", "r") as f:
+        for line in f.readlines():
+            logging.info(f"Container logs: {line}")
 
     try:
         data = (
