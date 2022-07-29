@@ -31,7 +31,7 @@ RUN npm --version
 
 RUN pip install --upgrade pip
 
-ENV ipfs_root="/content/ipfs"
+ENV ipfs_root="/tmp/ipfs"
 ENV worker_root="/content"
 RUN mkdir -p $ipfs_root
 RUN mkdir -p $ipfs_root/input

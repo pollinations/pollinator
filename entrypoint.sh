@@ -1,2 +1,2 @@
 #!/bin/bash
-python pollinator/main.py |& utils/pipe_to_pollinator_logs_discord.sh
+python pollinator/main.py --db_name pollen |& utils/pipe_to_pollinator_logs_discord.sh

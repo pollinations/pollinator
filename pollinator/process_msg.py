@@ -82,7 +82,6 @@ class RunningCogModel:
         loaded_model = self.image
 
     def __exit__(self, type, value, traceback):
-        # we leave the model running in case the next request needs the same model
         pass
 
 
@@ -119,25 +118,26 @@ def process_message(message):
         )
         assert len(data) == 1
         cid = data[0]["output"]
-        logging.info("Got CID: " + cid + ". Triggering pinning and social post")
+
+        data = (
+            supabase.table(constants.db_name)
+            .update(updated_message)
+            .eq("input", message["input"])
+            .execute()
+        )
+        print("Pollen set to done in db: ", data)
+        logging.info(f"Got CID: {cid}. Triggering pinning and social post")
         # run pinning and social post
         os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
         os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
         logging.info("done pinning and social post")
+        updated_message["final_output"] = cid
+        updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        updated_message["logs"] = f"https://ipfs.pollinations.ai/ipfs/{cid}/output/log"
+
     except Exception as e:  # noqa
         traceback.print_exc()
-        cid = None
-    updated_message["final_output"] = cid
-    updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    updated_message["logs"] = f"https://ipfs.pollinations.ai/ipfs/{cid}/output/log"
 
-    data = (
-        supabase.table(constants.db_name)
-        .update(updated_message)
-        .eq("input", message["input"])
-        .execute()
-    )
-    print("Pollen set to done in db: ", data)
     return response
 
 
@@ -168,10 +168,9 @@ def start_container_and_perform_request_and_send_outputs(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} | python pollinator/outputs_to_db.py {message['input']}"
+        f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} "
+        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}"
     ):
-        # Update output in pollen db whenever a new file is generated
-        # os.system(f"touch {output_path}/dummy")
         with RunningCogModel(image, output_path):
             response = send_to_cog_container(inputs, output_path)
             if response.status_code == 500:
@@ -181,7 +180,8 @@ def start_container_and_perform_request_and_send_outputs(message):
                 success = True
     # Now send final results once
     os.system(
-        f"pollinate-cli.js --send --path {ipfs_root} --once | python pollinator/outputs_to_db.py {message['input']}",
+        f"pollinate-cli.js --send --path {ipfs_root} --once "
+        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}",
     )
     return message, success
 
