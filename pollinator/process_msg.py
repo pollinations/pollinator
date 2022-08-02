@@ -65,6 +65,12 @@ def cogmodel_can_start_healthy():
     return response.status_code == 200
 
 
+@retry(tries=60, delay=1)
+def wait_for_docker_container():
+    logging.error(f"Trying to find cog container: {os.popen('docker ps').read()}")
+    assert "cogmodel" in os.popen("docker ps").read()
+
+
 class UnhealthyModel(Exception):
     pass
 
@@ -98,7 +104,7 @@ class RunningCogModel:
         kill_cog_model()
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
         os.system(self.cog_cmd)
-        time.sleep(1)
+        wait_for_docker_container()
         if not cogmodel_can_start_healthy():
             raise UnhealthyModel()
 
