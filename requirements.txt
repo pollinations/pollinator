@@ -8,3 +8,4 @@ supabase
 python-dotenv
 psutil
 pytest
+timeout-decorator

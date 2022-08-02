@@ -50,6 +50,25 @@ class BackgroundCommand:
 loaded_model = None
 
 
+@retry(tries=450, delay=2)
+def cogmodel_can_start_healthy():
+    """Wait for the cogmodel to load and return a healthy status code
+    If no docker command is running anymore, throw an exception"""
+    # check that cogmodel is a running as a container
+    if "cogmodel" not in os.popen("docker ps").read():
+        logging.error("No running cogmodel found in docker ps. Exiting")
+        return False
+    # check that it is healthy. This step might fail and and be retried
+    response = requests.get("http://localhost:5000/")
+    logging.info("Cog model is not healthy")
+    print(os.popen("cat /tmp/ipfs/output/logs").read())
+    return response.status_code == 200
+
+
+class UnhealthyModel(Exception):
+    pass
+
+
 class RunningCogModel:
     def __init__(self, image, output_path):
         self.image = image
@@ -79,6 +98,10 @@ class RunningCogModel:
         kill_cog_model()
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
         os.system(self.cog_cmd)
+        time.sleep(1)
+        if not cogmodel_can_start_healthy():
+            raise UnhealthyModel()
+
         loaded_model = self.image
 
     def __exit__(self, type, value, traceback):
@@ -107,6 +130,7 @@ def process_message(message):
     except Exception as e:
         logging.error(e)
         updated_message["success"] = False
+        updated_message["error"] = str(e)
 
     try:
         data = (
@@ -203,7 +227,6 @@ def fetch_inputs(ipfs_cid):
     return inputs
 
 
-@retry(tries=450, delay=2)
 def send_to_cog_container(inputs, output_path):
     # Send message to cog container
     payload = {"input": inputs}
