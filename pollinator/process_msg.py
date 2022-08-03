@@ -291,6 +291,7 @@ def write_http_response_files(response, output_path):
                 f.write(base64.b64decode(encoded))
     except Exception as e:  # noqa
         logging.info(f"http response not written to file: {type(e)} {e}")
+        traceback.print_exc()
 
 
 def tree_kill(pid):
