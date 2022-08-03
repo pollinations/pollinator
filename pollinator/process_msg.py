@@ -54,20 +54,23 @@ loaded_model = None
 def cogmodel_can_start_healthy():
     """Wait for the cogmodel to load and return a healthy status code
     If no docker command is running anymore, throw an exception"""
-    # check that cogmodel is a running as a container
+    logging.info("Checking if cogmodel is healthy...")
+
+    # check that cogmodel is a running as a containere
     if "cogmodel" not in os.popen("docker ps").read():
         logging.error("No running cogmodel found in docker ps. Exiting")
         return False
     # check that it is healthy. This step might fail and and be retried
     response = requests.get("http://localhost:5000/")
-    logging.info("Cog model is not healthy")
     print(os.popen("cat /tmp/ipfs/output/logs").read())
     return response.status_code == 200
 
 
 @retry(tries=60, delay=1)
 def wait_for_docker_container(cog_cmd):
+    logging.info(cog_cmd)
     os.system(cog_cmd)
+    # logging.info(os.popen(cog_cmd).read())
     logging.error(f"Trying to find cog container: {os.popen('docker ps').read()}")
     assert "cogmodel" in os.popen("docker ps").read()
 
@@ -116,6 +119,7 @@ class RunningCogModel:
 
 @retry(tries=60, delay=1)
 def wait_until_cogmodel_is_free():
+    logging.info("docker kill cogmodel")
     os.system("docker kill cogmodel")
     assert "cogmodel" not in os.popen("docker ps").read()
     logging.info("cogmodel killed and is container name is free.")
@@ -241,6 +245,7 @@ def fetch_inputs(ipfs_cid):
 
 
 def send_to_cog_container(inputs, output_path):
+    logging.info("Send to cog model")
     # Send message to cog container
     payload = {"input": inputs}
     response = requests.post("http://localhost:5000/predictions", json=payload)
@@ -287,7 +292,10 @@ def clean_folder(folder):
 
 def write_http_response_files(response, output_path):
     try:
-        for i, encoded_file in enumerate(response.json()["output"]):
+        output = response.json()["output"]
+        if not isinstance(output, list):
+            output = [output]
+        for i, encoded_file in enumerate(output):
             try:
                 encoded_file = encoded_file["file"]
             except TypeError:
