@@ -66,7 +66,8 @@ def cogmodel_can_start_healthy():
 
 
 @retry(tries=60, delay=1)
-def wait_for_docker_container():
+def wait_for_docker_container(cog_cmd):
+    os.system(cog_cmd)
     logging.error(f"Trying to find cog container: {os.popen('docker ps').read()}")
     assert "cogmodel" in os.popen("docker ps").read()
 
@@ -103,8 +104,7 @@ class RunningCogModel:
                 logging.info(f"Loaded model unhealthy, restarting: {self.image}")
         kill_cog_model()
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
-        os.system(self.cog_cmd)
-        wait_for_docker_container()
+        wait_for_docker_container(self.cog_cmd)
         if not cogmodel_can_start_healthy():
             raise UnhealthyModel()
 
@@ -114,10 +114,17 @@ class RunningCogModel:
         pass
 
 
+@retry(tries=60, delay=1)
+def wait_until_cogmodel_is_free():
+    os.system("docker kill cogmodel")
+    assert "cogmodel" not in os.popen("docker ps").read()
+    logging.info("cogmodel killed and is container name is free.")
+    time.sleep(3)
+
+
 def kill_cog_model():
     try:
-        os.system("docker kill cogmodel")
-        time.sleep(3)  # we have to wait until the container name is available again :/
+        wait_until_cogmodel_is_free()
         logging.info(f"Killed previous model ({loaded_model})")
     except Exception as e:  # noqa
         logging.error(f"Error killing cogmodel: {type(e)}{e}")

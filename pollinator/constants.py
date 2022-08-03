@@ -21,5 +21,5 @@ model_index = (
 
 def available_models():
     return list(requests.get(model_index).json().values()) + [
-        "no-gpu-test-image"
+        "no-gpu-test-image", "avatarclip"
     ]  # TODO .keys()
