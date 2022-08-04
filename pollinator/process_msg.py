@@ -75,7 +75,7 @@ def wait_for_docker_container(cog_cmd):
     logging.error(f"Trying to find cog container: {os.popen('docker ps').read()}")
     assert "cogmodel" in os.popen("docker ps").read()
     with open("/tmp/ipfs/output/log", "r") as f:
-        if 'is already in use by container' in f.read():
+        if "is already in use by container" in f.read():
             kill_cog_model()
             raise Exception("container name cogmodel is already in use")
 
