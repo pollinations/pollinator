@@ -62,6 +62,7 @@ def cogmodel_can_start_healthy():
         return False
     # check that it is healthy. This step might fail and and be retried
     response = requests.get("http://localhost:5000/")
+
     print(os.popen("cat /tmp/ipfs/output/logs").read())
     return response.status_code == 200
 
@@ -73,6 +74,10 @@ def wait_for_docker_container(cog_cmd):
     # logging.info(os.popen(cog_cmd).read())
     logging.error(f"Trying to find cog container: {os.popen('docker ps').read()}")
     assert "cogmodel" in os.popen("docker ps").read()
+    with open("/tmp/ipfs/output/log", "r") as f:
+        if 'is already in use by container' in f.read():
+            kill_cog_model()
+            raise Exception("container name cogmodel is already in use")
 
 
 class UnhealthyModel(Exception):
