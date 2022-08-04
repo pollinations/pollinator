@@ -7,7 +7,7 @@ on:
     tags: "*"
 
 jobs:
-  test:
+  linting:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -23,7 +23,6 @@ jobs:
       - run: isort --diff .
       - run: black --check .
       - run: flake8
-      # - run: pytest --cov --cov-fail-under=80
 
   docker-image:
     if:
@@ -39,13 +38,28 @@ jobs:
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
         id: extract_branch
+      
+      - name: Install cog
+        run: |
+          curl -o /usr/local/bin/cog -L https://github.com/replicate/cog/releases/latest/download/cog_`uname -s`_`uname -m`
+          chmod +x /usr/local/bin/cog
+      
+      - name: Build cog test image
+        run: cd test-cog-image && cog build -t no-gpu-test-image
 
       - name: Build docker image
         run: docker build . -t image:test
+      
+      - name: Run tests
+        env:
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ID: ${{ secrets.SUPABASE_ID }}
+        run: |
+          mkdir -p /tmp/ipfs/output
+          mkdir -p /tmp/ipfs/input
+          docker run -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs -e SUPABASE_API_KEY=$SUPABASE_API_KEY -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_ID=$SUPABASE_ID --network host image:test pytest -o log_cli=true test
 
-      # - name: Smoke test docker image
-      #   run: |
-      #     docker run --rm middlepollen:test
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:

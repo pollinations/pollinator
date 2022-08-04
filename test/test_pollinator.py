@@ -25,14 +25,14 @@ def upload_prompt_to_ipfs(prompt):
     with tempfile.TemporaryDirectory() as tmpdir:
         os.makedirs(os.path.join(tmpdir, "input"))
         path = f"{tmpdir}/input/Prompt"
-        with BackgroundCommand(
-            f"pollinate-cli.js --send --ipns --debounce 70 --path {tmpdir} > /tmp/cid"
-        ):
-            with open(path, "w") as f:
-                f.write(prompt)
+        with open(path, "w") as f:
+            f.write(prompt)
+        os.system(
+            f"pollinate-cli.js --send --ipns --debounce 70 --path {tmpdir} --once > /tmp/cid"
+        )
         with open("/tmp/cid") as f:
             cid = f.read().strip().split("\n")[-1].strip()
-
+        print(f"Uploaded {prompt} to ipfs as {cid}")
         return cid
 
 
@@ -68,7 +68,7 @@ def test_many_open_requests_in_db():
     for _ in range(2):
         send_valid_dummy_request()
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
-        time.sleep(60)
+        time.sleep(20)
     assert_success_is_not(None)
     assert_success_is_not(False)
 
@@ -79,10 +79,10 @@ def test_no_open_request_subscribe_and_wait():
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
         for _ in range(2):
             send_valid_dummy_request()
-        time.sleep(30)
+        time.sleep(20)
         for _ in range(2):
             send_valid_dummy_request()
-        time.sleep(90)
+        time.sleep(20)
     assert_success_is_not(None)
     assert_success_is_not(False)
 
@@ -93,10 +93,10 @@ def test_invalid_request_in_db():
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
         for _ in range(2):
             send_invalid_dummy_request()
-        time.sleep(30)
+        time.sleep(20)
         for _ in range(2):
             send_invalid_dummy_request()
-        time.sleep(60)
+        time.sleep(20)
     assert_success_is_not(None)
     assert_success_is_not(True)
 
@@ -106,3 +106,7 @@ def assert_success_is_not(success=None):
     data = supabase.table(constants.db_name).select("*").execute()
     data = [i for i in data.data if i["success"] == success]
     assert len(data) == 0, f"Found {len(data)} with success={success}: {data}"
+
+
+if __name__ == "__main__":
+    test_many_open_requests_in_db()

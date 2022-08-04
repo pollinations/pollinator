@@ -31,7 +31,7 @@ RUN npm --version
 
 RUN pip install --upgrade pip
 
-ENV ipfs_root="/content/ipfs"
+ENV ipfs_root="/tmp/ipfs"
 ENV worker_root="/content"
 RUN mkdir -p $ipfs_root
 RUN mkdir -p $ipfs_root/input
@@ -41,6 +41,10 @@ RUN git clone https://github.com/pollinations/pollinations-ipfs.git
 RUN cd /content/pollinations-ipfs && npm run install_backend
 
 WORKDIR /app
+
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+
 COPY . /app
  
 # CMD cd /content/pollinations/app && pollinate --execute "run_notebook.sh" -l $output_path/log -p $ipfs_root --ipns -n 123420 --debounce 200 > /content/cid
@@ -48,4 +52,5 @@ RUN pip install .
 
 ENV AWS_REGION="us-east-1"
  
-CMD ["python", "pollinator/main.py"]
+RUN chmod a+x entrypoint.sh
+CMD ["./entrypoint.sh"]

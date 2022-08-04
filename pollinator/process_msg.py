@@ -6,8 +6,10 @@ import os
 import shutil
 import subprocess
 import time
+import traceback
 from mimetypes import guess_extension
 
+import psutil
 import requests
 from retry import retry
 
@@ -34,11 +36,11 @@ class BackgroundCommand:
         return self.proc
 
     def __exit__(self, type, value, traceback):
-        time.sleep(15)
         logging.info(f"Killing background command: {self.cmd}")
-        self.proc.kill()
+        tree_kill(self.proc.pid)
         try:
             logs, errors = self.proc.communicate(timeout=2)
+            logs, errors = logs.decode("utf-8"), errors.decode("utf-8")
             logging.info(f"   Logs: {logs}")
             logging.error(f"   errors: {errors}")
         except subprocess.TimeoutExpired:
@@ -46,6 +48,35 @@ class BackgroundCommand:
 
 
 loaded_model = None
+
+
+@retry(tries=450, delay=2)
+def cogmodel_can_start_healthy():
+    """Wait for the cogmodel to load and return a healthy status code
+    If no docker command is running anymore, throw an exception"""
+    logging.info("Checking if cogmodel is healthy...")
+
+    # check that cogmodel is a running as a containere
+    if "cogmodel" not in os.popen("docker ps").read():
+        logging.error("No running cogmodel found in docker ps. Exiting")
+        return False
+    # check that it is healthy. This step might fail and and be retried
+    response = requests.get("http://localhost:5000/")
+    print(os.popen("cat /tmp/ipfs/output/logs").read())
+    return response.status_code == 200
+
+
+@retry(tries=60, delay=1)
+def wait_for_docker_container(cog_cmd):
+    logging.info(cog_cmd)
+    os.system(cog_cmd)
+    # logging.info(os.popen(cog_cmd).read())
+    logging.error(f"Trying to find cog container: {os.popen('docker ps').read()}")
+    assert "cogmodel" in os.popen("docker ps").read()
+
+
+class UnhealthyModel(Exception):
+    pass
 
 
 class RunningCogModel:
@@ -76,18 +107,28 @@ class RunningCogModel:
                 logging.info(f"Loaded model unhealthy, restarting: {self.image}")
         kill_cog_model()
         logging.info(f"Starting {self.image}: {self.cog_cmd}")
-        os.system(self.cog_cmd)
+        wait_for_docker_container(self.cog_cmd)
+        if not cogmodel_can_start_healthy():
+            raise UnhealthyModel()
+
         loaded_model = self.image
 
     def __exit__(self, type, value, traceback):
-        # we leave the model running in case the next request needs the same model
         pass
+
+
+@retry(tries=60, delay=1)
+def wait_until_cogmodel_is_free():
+    logging.info("docker kill cogmodel")
+    os.system("docker kill cogmodel")
+    assert "cogmodel" not in os.popen("docker ps").read()
+    logging.info("cogmodel killed and is container name is free.")
+    time.sleep(3)
 
 
 def kill_cog_model():
     try:
-        os.system("docker kill cogmodel")
-        time.sleep(3)  # we have to wait until the container name is available again :/
+        wait_until_cogmodel_is_free()
         logging.info(f"Killed previous model ({loaded_model})")
     except Exception as e:  # noqa
         logging.error(f"Error killing cogmodel: {type(e)}{e}")
@@ -106,30 +147,38 @@ def process_message(message):
     except Exception as e:
         logging.error(e)
         updated_message["success"] = False
+        updated_message["error"] = str(e)
 
     try:
-        with open("/tmp/cid", "r") as f:
-            cid = f.readlines()[-1].strip()
-        logging.info("Got CID: " + cid + ". Triggering pinning and social post")
-        # run pinning and social post
-        os.system(f"node /usr/local/bin/pinning-cli.js {cid} &")
-        os.system(f"node /usr/local/bin/social-post-cli.js {cid} &")
-        logging.info("done pinning and social post")
-    except:  # noqa
-        cid = None
-    updated_message["final_output"] = cid
-    updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    updated_message[
-        "logs"
-    ] = f"https://ipfs.pollinations.ai/ipfs/{message['input']}/output/log"
+        data = (
+            supabase.table(constants.db_name)
+            .select("*")
+            .eq("input", message["input"])
+            .execute()
+            .data
+        )
+        assert len(data) == 1
+        cid = data[0]["output"]
 
-    data = (
-        supabase.table(constants.db_name)
-        .update(updated_message)
-        .eq("input", message["input"])
-        .execute()
-    )
-    print("Pollen set to done in db: ", data)
+        data = (
+            supabase.table(constants.db_name)
+            .update(updated_message)
+            .eq("input", message["input"])
+            .execute()
+        )
+        print("Pollen set to done in db: ", data)
+        logging.info(f"Got CID: {cid}. Triggering pinning and social post")
+        # run pinning and social post
+        os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
+        os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
+        logging.info("done pinning and social post")
+        updated_message["final_output"] = cid
+        updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        updated_message["logs"] = f"https://ipfs.pollinations.ai/ipfs/{cid}/output/log"
+
+    except Exception as e:  # noqa
+        traceback.print_exc()
+
     return response
 
 
@@ -160,22 +209,21 @@ def start_container_and_perform_request_and_send_outputs(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate-cli.js --send --ipns --nodeid {message['input']} --debounce 70"
-        f" --path {ipfs_root} > /tmp/cid"
+        f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} "
+        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}"
     ):
-        with BackgroundCommand(
-            f"python pollinator/outputs_to_db.py {message['input']}"
-        ):
-            # Update output in pollen db whenever a new file is generated
-            os.system(f"touch {output_path}/dummy")
-            with RunningCogModel(image, output_path):
-                response = send_to_cog_container(inputs, output_path)
-                if response.status_code == 500:
-                    kill_cog_model()
-                    success = False
-                else:
-                    success = True
-                # read cid from the last line of /tmp/cid
+        with RunningCogModel(image, output_path):
+            response = send_to_cog_container(inputs, output_path)
+            if response.status_code == 500:
+                kill_cog_model()
+                success = False
+            else:
+                success = True
+    # Now send final results once
+    os.system(
+        f"pollinate-cli.js --send --path {ipfs_root} --once "
+        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}",
+    )
     return message, success
 
 
@@ -196,8 +244,8 @@ def fetch_inputs(ipfs_cid):
     return inputs
 
 
-@retry(tries=120, delay=2)
 def send_to_cog_container(inputs, output_path):
+    logging.info("Send to cog model")
     # Send message to cog container
     payload = {"input": inputs}
     response = requests.post("http://localhost:5000/predictions", json=payload)
@@ -208,8 +256,7 @@ def send_to_cog_container(inputs, output_path):
 
     if response.status_code != 200:
         logging.error(response.text)
-        write_folder(output_path, "log", response.text, "a")
-        write_folder(output_path, "success", "false")
+        write_folder(output_path, "cog_response", response.text, "a")
         kill_cog_model()
         raise Exception(
             f"Error while sending message to cog container: {response.text}"
@@ -217,7 +264,6 @@ def send_to_cog_container(inputs, output_path):
     else:
         write_http_response_files(response, output_path)
         write_folder(output_path, "done", "true")
-        write_folder(output_path, "success", "true")
         logging.info(f"Set done to true in {output_path}")
 
     return response
@@ -246,7 +292,10 @@ def clean_folder(folder):
 
 def write_http_response_files(response, output_path):
     try:
-        for i, encoded_file in enumerate(response.json()["output"]):
+        output = response.json()["output"]
+        if not isinstance(output, list):
+            output = [output]
+        for i, encoded_file in enumerate(output):
             try:
                 encoded_file = encoded_file["file"]
             except TypeError:
@@ -257,6 +306,16 @@ def write_http_response_files(response, output_path):
                 f.write(base64.b64decode(encoded))
     except Exception as e:  # noqa
         logging.info(f"http response not written to file: {type(e)} {e}")
+        traceback.print_exc()
+
+
+def tree_kill(pid):
+    print(f"Killing process {pid} and their complete family")
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        print(f"Killing child: {child} {child.pid}")
+        child.kill()
+    parent.kill()
 
 
 # if __name__ == "__main__":
