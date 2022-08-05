@@ -117,6 +117,10 @@ def send_to_cog_container(inputs, output_path):
     if response.status_code != 200:
         logging.error(response.text)
         write_folder(output_path, "cog_response", response.text, "a")
+        try:
+            print("Unhealthy cog model with these logs:")
+            print(os.popen("docker logs cogmodel").read())
+        except: pass
         kill_cog_model()
         raise Exception(
             f"Error while sending message to cog container: {response.text}"
