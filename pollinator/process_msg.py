@@ -155,6 +155,7 @@ def process_message(message):
         updated_message["error"] = str(e)
 
     try:
+        updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         data = (
             supabase.table(constants.db_name)
             .select("*")
@@ -177,9 +178,6 @@ def process_message(message):
         os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
         os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
         logging.info("done pinning and social post")
-        updated_message["final_output"] = cid
-        updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        updated_message["logs"] = f"https://ipfs.pollinations.ai/ipfs/{cid}/output/log"
 
     except Exception as e:  # noqa
         traceback.print_exc()
