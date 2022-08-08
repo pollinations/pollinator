@@ -110,7 +110,7 @@ class BackgroundCommand:
             logging.error(f"   errors: {errors}")
         except subprocess.TimeoutExpired:
             pass
-        if on_exit is not None:
+        if self.on_exit is not None:
             os.system(self.on_exit)
 
 
