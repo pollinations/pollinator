@@ -42,7 +42,7 @@ def process_message(message):
 
     try:
         updated_message["end_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        
+
         data = (
             supabase.table(constants.db_name)
             .update(updated_message)

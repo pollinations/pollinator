@@ -120,7 +120,8 @@ def send_to_cog_container(inputs, output_path):
         try:
             print("Unhealthy cog model with these logs:")
             print(os.popen("docker logs cogmodel").read())
-        except: pass
+        except:
+            pass
         kill_cog_model()
         raise Exception(
             f"Error while sending message to cog container: {response.text}"
