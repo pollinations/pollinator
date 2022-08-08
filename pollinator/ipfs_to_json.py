@@ -110,7 +110,8 @@ class BackgroundCommand:
             logging.error(f"   errors: {errors}")
         except subprocess.TimeoutExpired:
             pass
-        os.system(self.on_exit)
+        if on_exit is not None:
+            os.system(self.on_exit)
 
 
 def tree_kill(pid):
