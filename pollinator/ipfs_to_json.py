@@ -2,14 +2,14 @@
 # coding: utf-8
 import json
 import logging
-import subprocess
-import sys
-from typing import Any, Dict
 import os
 import shutil
-import psutil
+import subprocess
+import sys
 import time
+from typing import Any, Dict
 
+import psutil
 import timeout_decorator
 
 

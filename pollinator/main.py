@@ -5,7 +5,7 @@ import traceback
 import click
 from realtime.connection import Socket
 
-from pollinator import constants, cog_handler
+from pollinator import cog_handler, constants
 from pollinator.constants import supabase, supabase_api_key, supabase_id
 from pollinator.process_msg import process_message
 
@@ -114,8 +114,8 @@ def subscribe_while_idle():
                     constants.i_am_busy = True
                     maybe_process(payload["record"])
                     finish_all_tasks()
-                except Exception as e:
-                    logging.error(f"Exception catched in unsubscribe_and_process:")
+                except Exception: # noqa
+                    logging.error("Exception catched in unsubscribe_and_process:")
                     traceback.print_exc()
                 constants.i_am_busy = False
                 print("Ready to accept a task")

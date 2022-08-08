@@ -1,11 +1,12 @@
-import os
-from retry import retry
-import time
-import requests
-import logging
-from mimetypes import guess_extension
 import base64
+import logging
+import os
+import time
 import traceback
+from mimetypes import guess_extension
+
+import requests
+from retry import retry
 
 from pollinator.constants import test_image
 from pollinator.ipfs_to_json import write_folder
@@ -120,7 +121,7 @@ def send_to_cog_container(inputs, output_path):
         try:
             print("Unhealthy cog model with these logs:")
             print(os.popen("docker logs cogmodel").read())
-        except:
+        except: # noqa
             pass
         kill_cog_model()
         raise Exception(

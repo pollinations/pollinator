@@ -5,20 +5,19 @@ import os
 import traceback
 
 from pollinator import constants
-from pollinator.constants import available_models, supabase
-from pollinator.ipfs_to_json import (
-    fetch_inputs,
-    BackgroundCommand,
-    prepare_output_folder,
-    clean_folder,
-    write_folder,
-)
 from pollinator.cog_handler import (
     RunningCogModel,
     kill_cog_model,
     send_to_cog_container,
 )
-
+from pollinator.constants import available_models, supabase
+from pollinator.ipfs_to_json import (
+    BackgroundCommand,
+    clean_folder,
+    fetch_inputs,
+    prepare_output_folder,
+    write_folder,
+)
 
 ipfs_root = os.path.abspath("/tmp/ipfs/")
 output_path = os.path.join(ipfs_root, "output")
