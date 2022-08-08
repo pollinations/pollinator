@@ -87,8 +87,9 @@ def prepare_output_folder(output_path):
 
 
 class BackgroundCommand:
-    def __init__(self, cmd):
+    def __init__(self, cmd, on_exit=None):
         self.cmd = cmd
+        self.on_exit = on_exit
 
     def __enter__(self):
         self.proc = subprocess.Popen(
@@ -109,6 +110,8 @@ class BackgroundCommand:
             logging.error(f"   errors: {errors}")
         except subprocess.TimeoutExpired:
             pass
+        if self.on_exit is not None:
+            os.system(self.on_exit)
 
 
 def tree_kill(pid):
