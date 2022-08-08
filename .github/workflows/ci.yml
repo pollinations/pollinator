@@ -70,7 +70,7 @@ jobs:
 
       - name: Setimage tag
         run: |
-          if [[ $BRANCH == 'main' && $GITHUB_EVENT_NAME == 'push' ]]; then
+          if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
               echo "IMAGE_TAG=main" >> "$GITHUB_ENV"
           else
               echo "IMAGE_TAG=dev" >> "$GITHUB_ENV"
