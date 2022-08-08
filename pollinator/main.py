@@ -110,9 +110,13 @@ def subscribe_while_idle():
                 if constants.i_am_busy:
                     print("Ignoring task, am busy")
                     return
-                constants.i_am_busy = True
-                maybe_process(payload["record"])
-                finish_all_tasks()
+                try:
+                    constants.i_am_busy = True
+                    maybe_process(payload["record"])
+                    finish_all_tasks()
+                except Exception as e:
+                    logging.error(f"Exception catched in unsubscribe_and_process:")
+                    traceback.print_exc()
                 constants.i_am_busy = False
                 print("Ready to accept a task")
 
@@ -120,6 +124,7 @@ def subscribe_while_idle():
             s.listen()
         except Exception as e:
             logging.info(f"Socket stopped listening, restarting: {e}")
+            constants.i_am_busy = False
             traceback.print_exc()
 
 
