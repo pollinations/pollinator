@@ -114,7 +114,7 @@ def subscribe_while_idle():
                     constants.i_am_busy = True
                     maybe_process(payload["record"])
                     finish_all_tasks()
-                except Exception: # noqa
+                except Exception:  # noqa
                     logging.error("Exception catched in unsubscribe_and_process:")
                     traceback.print_exc()
                 constants.i_am_busy = False
