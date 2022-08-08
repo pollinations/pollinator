@@ -5,7 +5,7 @@ import traceback
 import click
 from realtime.connection import Socket
 
-from pollinator import constants, process_msg
+from pollinator import cog_handler, constants
 from pollinator.constants import supabase, supabase_api_key, supabase_id
 from pollinator.process_msg import process_message
 
@@ -29,13 +29,13 @@ def finish_all_tasks():
 
 def get_task_from_db():
     """Scan the db for tasks that are not in progress. If there are none, return None
-    If there are many, return the olderst one for the currently process_msg.loaded_model.
-    If there are none for the process_msg.loaded_model, return the oldest."""
+    If there are many, return the olderst one for the currently cog_handler.loaded_model.
+    If there are none for the cog_handler.loaded_model, return the oldest."""
     data = (
         supabase.table(constants.db_name)
         .select("*")
         .eq("processing_started", False)
-        .eq("image", process_msg.loaded_model)
+        .eq("image", cog_handler.loaded_model)
         .order("request_submit_time")
         .execute()
     )
@@ -57,16 +57,16 @@ def get_task_from_db():
 
 def maybe_process(message):
     if (
-        message["image"] != process_msg.loaded_model
-        and process_msg.loaded_model is not None
+        message["image"] != cog_handler.loaded_model
+        and cog_handler.loaded_model is not None
     ):
         logging.info(
             "Message is not for this model, waiting a bit to give other workers a chance"
         )
         time.sleep(1)
     elif (
-        message["image"] != process_msg.loaded_model
-        and process_msg.loaded_model is None
+        message["image"] != cog_handler.loaded_model
+        and cog_handler.loaded_model is None
     ):
         logging.info("No model loaded, wait 0.5s to give other workers a chance")
         time.sleep(0.5)
@@ -110,9 +110,13 @@ def subscribe_while_idle():
                 if constants.i_am_busy:
                     print("Ignoring task, am busy")
                     return
-                constants.i_am_busy = True
-                maybe_process(payload["record"])
-                finish_all_tasks()
+                try:
+                    constants.i_am_busy = True
+                    maybe_process(payload["record"])
+                    finish_all_tasks()
+                except Exception:  # noqa
+                    logging.error("Exception catched in unsubscribe_and_process:")
+                    traceback.print_exc()
                 constants.i_am_busy = False
                 print("Ready to accept a task")
 
@@ -120,6 +124,7 @@ def subscribe_while_idle():
             s.listen()
         except Exception as e:
             logging.info(f"Socket stopped listening, restarting: {e}")
+            constants.i_am_busy = False
             traceback.print_exc()
 
 
