@@ -1,9 +1,9 @@
 import base64
+import json
 import logging
 import os
 import time
 import traceback
-import json
 from mimetypes import guess_extension
 
 import requests
@@ -119,7 +119,7 @@ def send_to_cog_container(inputs, output_path):
     if response.status_code != 200:
         logging.error(response.text)
         write_folder(output_path, "cog_response", json.dumps(response.text))
-        write_folder(output_path, "success", 'false')
+        write_folder(output_path, "success", "false")
         try:
             print("Unhealthy cog model with these logs:")
             print(os.popen("docker logs cogmodel").read())
