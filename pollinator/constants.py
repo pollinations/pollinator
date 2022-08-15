@@ -4,6 +4,7 @@ import requests
 from dotenv import load_dotenv
 from supabase import Client, create_client
 
+
 load_dotenv()
 url: str = os.environ.get("SUPABASE_URL")
 supabase_api_key: str = os.environ.get("SUPABASE_API_KEY")
@@ -19,8 +20,18 @@ model_index = (
 )
 
 
+def image_exists(image_name):
+    return image_name.split("@")[0] in os.popen(f"docker images {image_name}").read()
+
+
 def available_models():
-    return list(requests.get(model_index).json().values()) + [
+    supported = list(requests.get(model_index).json().values()) + [
         "no-gpu-test-image",
         "avatarclip",
-    ]  # TODO .keys()
+    ] 
+    available = [i for i in supported if image_exists(i)]
+    return available
+
+
+if __name__ == "__main__":
+    print(available_models())
