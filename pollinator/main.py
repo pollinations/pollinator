@@ -46,6 +46,7 @@ def get_task_from_db():
         supabase.table(constants.db_name)
         .select("*")
         .eq("processing_started", False)
+        .in_(["image", constants.available_models()])
         .order("request_submit_time")
         .execute()
     )

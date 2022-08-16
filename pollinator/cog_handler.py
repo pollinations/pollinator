@@ -5,6 +5,7 @@ import time
 import traceback
 import json
 from mimetypes import guess_extension
+from pollinator import constants
 
 import requests
 from retry import retry
@@ -71,12 +72,11 @@ class UnhealthyModel(Exception):
 class RunningCogModel:
     def __init__(self, image, output_path):
         self.image = image
-        gpus = "--gpus all" if image != test_image else ""
         # Start cog container
         self.cog_cmd = (
             f'bash -c "docker run --rm --name cogmodel -p 5000:5000 '
             f"--mount type=bind,source={output_path},target=/outputs "
-            f'{gpus} {image} &> {output_path}/log" &'
+            f'{constants.gpu_flag} {image} &> {output_path}/log" &'
         )
         logging.info(f"Initializing cog command: {self.cog_cmd}")
 

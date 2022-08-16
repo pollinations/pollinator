@@ -12,15 +12,26 @@ supabase_id: str = os.environ["SUPABASE_ID"]
 db_name = ""  # will be set by main.py or a test
 test_image = "no-gpu-test-image"
 i_am_busy = False
-
+has_gpu = os.system("nvidia-smi") == 0
+gpu_flag = "--gpus all" if has_gpu else ""
 
 model_index = (
     "https://raw.githubusercontent.com/pollinations/model-index/main/images.json"
 )
 
+def image_exists(image_name):
+    return image_name.split("@")[0] in os.popen(f"docker images {image_name}").read()
+
 
 def available_models():
-    return list(requests.get(model_index).json().values()) + [
+    breakpoint()
+    supported = list(requests.get(model_index).json().values()) + [
         "no-gpu-test-image",
         "avatarclip",
-    ]  # TODO .keys()
+    ]
+    available = [i for i in supported if image_exists(i)]
+    return available
+
+
+if __name__ == "__main__":
+    print(available_models())
