@@ -42,7 +42,6 @@ def get_task_from_db():
     if len(data.data) > 0:
         return data.data[0]
     # No tasks found, include tasks for other images
-    breakpoint()
     data = (
         supabase.table(constants.db_name)
         .select("*")
