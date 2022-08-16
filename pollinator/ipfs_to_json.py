@@ -87,9 +87,6 @@ def prepare_output_folder(output_path):
 
 
 class BackgroundCommand:
-    def __init__(self, cmd):
-        self.cmd = cmd
-        
     def __init__(self, cmd, on_exit=None):
         self.cmd = cmd
         self.on_exit = on_exit
