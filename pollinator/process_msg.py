@@ -93,7 +93,9 @@ def start_container_and_perform_request_and_send_outputs(message):
     # Start IPFS syncing
     with BackgroundCommand(
         f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} "
-        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}"
+        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}",
+        on_exit=f"pollinate-cli.js --send --path {ipfs_root} --once "
+        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}",
     ):
         with RunningCogModel(image, output_path):
             response = send_to_cog_container(inputs, output_path)
@@ -102,9 +104,5 @@ def start_container_and_perform_request_and_send_outputs(message):
                 success = False
             else:
                 success = True
-    # Now send final results once
-    os.system(
-        f"pollinate-cli.js --send --path {ipfs_root} --once "
-        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}",
-    )
+    write_folder(output_path, "success", json.dumps(success))
     return message, success
