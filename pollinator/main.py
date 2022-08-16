@@ -36,6 +36,7 @@ def get_task_from_db():
         .select("*")
         .eq("processing_started", False)
         .eq("image", cog_handler.loaded_model)
+        .in_("image", constants.available_models())
         .order("request_submit_time")
         .execute()
     )
