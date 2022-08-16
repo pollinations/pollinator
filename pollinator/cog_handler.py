@@ -1,16 +1,15 @@
 import base64
+import json
 import logging
 import os
 import time
 import traceback
-import json
 from mimetypes import guess_extension
-from pollinator import constants
 
 import requests
 from retry import retry
 
-from pollinator.constants import test_image
+from pollinator import constants
 from pollinator.ipfs_to_json import write_folder
 
 

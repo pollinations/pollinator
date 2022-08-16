@@ -19,6 +19,7 @@ model_index = (
     "https://raw.githubusercontent.com/pollinations/model-index/main/images.json"
 )
 
+
 def image_exists(image_name):
     return image_name.split("@")[0] in os.popen(f"docker images {image_name}").read()
 
