@@ -41,7 +41,6 @@ def get_task_from_db():
         .execute()
     )
     if len(data.data) > 0:
-        breakpoint()
         return data.data[0]
     # No tasks found, include tasks for other images
     data = (
@@ -53,7 +52,6 @@ def get_task_from_db():
         .execute()
     )
     if len(data.data) > 0:
-        breakpoint()
         return data.data[0]
     # There is no task
     return None
