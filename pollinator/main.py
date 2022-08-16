@@ -41,6 +41,7 @@ def get_task_from_db():
         .execute()
     )
     if len(data.data) > 0:
+        breakpoint()
         return data.data[0]
     # No tasks found, include tasks for other images
     data = (
@@ -52,12 +53,16 @@ def get_task_from_db():
         .execute()
     )
     if len(data.data) > 0:
+        breakpoint()
         return data.data[0]
     # There is no task
     return None
 
 
 def maybe_process(message):
+    if message["image"] not in constants.available_models():
+        logging.info(f"Ignoring message for {message['image']}")
+        return None
     if (
         message["image"] != cog_handler.loaded_model
         and cog_handler.loaded_model is not None
