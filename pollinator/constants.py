@@ -24,7 +24,6 @@ def image_exists(image_name):
 
 
 def available_models():
-    breakpoint()
     supported = list(requests.get(model_index).json().values()) + [
         "no-gpu-test-image",
         "avatarclip",
