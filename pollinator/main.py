@@ -42,11 +42,12 @@ def get_task_from_db():
     if len(data.data) > 0:
         return data.data[0]
     # No tasks found, include tasks for other images
+    breakpoint()
     data = (
         supabase.table(constants.db_name)
         .select("*")
         .eq("processing_started", False)
-        .in_(["image", constants.available_models()])
+        .in_("image", constants.available_models())
         .order("request_submit_time")
         .execute()
     )
