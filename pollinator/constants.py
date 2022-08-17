@@ -3,6 +3,9 @@ import os
 import requests
 from dotenv import load_dotenv
 from supabase import Client, create_client
+from functools import lru_cache
+import time
+
 
 load_dotenv()
 url: str = os.environ.get("SUPABASE_URL")
@@ -15,8 +18,12 @@ i_am_busy = False
 has_gpu = os.system("nvidia-smi") == 0
 gpu_flag = "--gpus all" if has_gpu else ""
 
+pollinator_group = os.environ.get("POLLINATOR_GROUP", "T4")
+
+print("Pollinator group:", pollinator_group)
+
 model_index = (
-    "https://raw.githubusercontent.com/pollinations/model-index/main/images.json"
+    "https://raw.githubusercontent.com/pollinations/model-index/main/metadata.json"
 )
 
 
@@ -24,13 +31,32 @@ def image_exists(image_name):
     return image_name.split("@")[0] in os.popen(f"docker images {image_name}").read()
 
 
+
+def get_ttl_hash(seconds=300):
+    """Return the same value withing `seconds` time period"""
+    return round(time.time() / seconds)
+
+@lru_cache()
+def available_models_(ttl_hash=None):
+    del ttl_hash  # to emphasize we don't use it and to shut pylint up
+    metadata = requests.get(model_index).json()
+    supported = []
+    for image, meta in metadata.items():
+        try:
+            if pollinator_group in meta['meta']["pollinator_group"]:
+                if image_exists(image):
+                    supported += [image]
+        except KeyError:
+            pass
+    return supported
+
+
 def available_models():
-    supported = list(requests.get(model_index).json().values()) + [
-        "no-gpu-test-image",
-        "avatarclip",
-    ]
-    available = [i for i in supported if image_exists(i)]
-    return available
+    return available_models_(get_ttl_hash())
+
+
+
+    
 
 
 if __name__ == "__main__":
