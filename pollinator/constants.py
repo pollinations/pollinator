@@ -1,11 +1,10 @@
 import os
+import time
+from functools import lru_cache
 
 import requests
 from dotenv import load_dotenv
 from supabase import Client, create_client
-from functools import lru_cache
-import time
-
 
 load_dotenv()
 url: str = os.environ.get("SUPABASE_URL")
@@ -31,10 +30,10 @@ def image_exists(image_name):
     return image_name.split("@")[0] in os.popen(f"docker images {image_name}").read()
 
 
-
 def get_ttl_hash(seconds=300):
     """Return the same value withing `seconds` time period"""
     return round(time.time() / seconds)
+
 
 @lru_cache()
 def available_models_(ttl_hash=None):
@@ -43,20 +42,16 @@ def available_models_(ttl_hash=None):
     supported = []
     for image, meta in metadata.items():
         try:
-            if pollinator_group in meta['meta']["pollinator_group"]:
+            if pollinator_group in meta["meta"]["pollinator_group"]:
                 if image_exists(image):
                     supported += [image]
         except KeyError:
             pass
-    return supported
+    return supported + [test_image]
 
 
 def available_models():
     return available_models_(get_ttl_hash())
-
-
-
-    
 
 
 if __name__ == "__main__":

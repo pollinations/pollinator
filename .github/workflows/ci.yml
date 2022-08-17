@@ -52,7 +52,7 @@ jobs:
         run: |
           mkdir -p /tmp/ipfs/output
           mkdir -p /tmp/ipfs/input
-          docker run -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs -e SUPABASE_API_KEY=$SUPABASE_API_KEY -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_ID=$SUPABASE_ID --network host image:test pytest -o log_cli=true test
+          docker run -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs -e SUPABASE_API_KEY=$SUPABASE_API_KEY -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_ID=$SUPABASE_ID -e POLLINATOR_GROUP cpu --network host image:test pytest -o log_cli=true test
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
