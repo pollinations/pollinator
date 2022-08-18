@@ -36,6 +36,7 @@ def get_task_from_db():
         .select("*")
         .eq("processing_started", False)
         .eq("image", cog_handler.loaded_model)
+        .in_("image", constants.available_models())
         .order("request_submit_time")
         .execute()
     )
@@ -46,6 +47,7 @@ def get_task_from_db():
         supabase.table(constants.db_name)
         .select("*")
         .eq("processing_started", False)
+        .in_("image", constants.available_models())
         .order("request_submit_time")
         .execute()
     )
@@ -56,6 +58,9 @@ def get_task_from_db():
 
 
 def maybe_process(message):
+    if message["image"] not in constants.available_models():
+        logging.info(f"Ignoring message for {message['image']}")
+        return None
     if (
         message["image"] != cog_handler.loaded_model
         and cog_handler.loaded_model is not None
