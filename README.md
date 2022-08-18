@@ -25,9 +25,3 @@ docker run --env-file .env pollinator
 # Tests
 1. Build the test model: `cd test-cog-model && cog build -t no-gpu-test-image`
 2. Run the tests: `pytest test`
-
-
-
-
-
-
