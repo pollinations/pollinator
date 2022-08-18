@@ -32,6 +32,17 @@ jobs:
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
         id: extract_branch
+
+      - name: Setimage tag
+        run: |
+          if [[ ${{ steps.extract_branch.outputs.BRANCH }} == 'main' && $GITHUB_EVENT_NAME == 'push' ]]; then
+              echo "IMAGE_TAG=main" >> "$GITHUB_ENV"
+          else
+              echo "IMAGE_TAG=dev" >> "$GITHUB_ENV"
+          fi
+      
+      - name: Print image tag
+        run: echo $IMAGE_TAG
       
       - name: Install cog
         run: |
@@ -67,14 +78,6 @@ jobs:
       
       - name: Create repository if it doesn't exist yet
         run: aws ecr describe-repositories --repository-names ${{ github.repository }} || aws ecr create-repository --repository-name ${{ github.repository }}
-
-      - name: Setimage tag
-        run: |
-          if [[ $BRANCH == 'main' && $GITHUB_EVENT_NAME == 'push' ]]; then
-              echo "IMAGE_TAG=main" >> "$GITHUB_ENV"
-          else
-              echo "IMAGE_TAG=dev" >> "$GITHUB_ENV"
-          fi
 
       - name: Tag and push image to Amazon ECR
         env:
