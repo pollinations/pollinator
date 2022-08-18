@@ -9,9 +9,10 @@ from pollinator import cog_handler, constants
 from pollinator.constants import supabase, supabase_api_key, supabase_id
 from pollinator.process_msg import process_message
 
-logging.basicConfig(format=f"%(asctime)s %(levelname)s:%(message)s", level=logging.INFO)
+logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.INFO)
 
 print(constants.worker)
+
 
 @click.command()
 @click.option("--db_name", default=constants.db_name, help="Name of the db to use.")
@@ -91,11 +92,13 @@ def lock_message(message):
     """Lock the message in the db and throw an error if it is already locked"""
     data = (
         supabase.table(constants.db_name)
-        .update({
-            "processing_started": True,
-            "pollinator_group": constants.pollinator_group,
-            "worker": constants.worker
-        })
+        .update(
+            {
+                "processing_started": True,
+                "pollinator_group": constants.pollinator_group,
+                "worker": constants.worker,
+            }
+        )
         .eq("input", message["input"])
         .eq("processing_started", False)
         .execute()
