@@ -104,5 +104,5 @@ def start_container_and_perform_request_and_send_outputs(message):
                 success = False
             else:
                 success = True
-    write_folder(output_path, "success", json.dumps(success))
+        write_folder(output_path, "success", json.dumps(success))
     return message, success
