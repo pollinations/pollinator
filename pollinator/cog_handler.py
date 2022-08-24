@@ -13,7 +13,7 @@ from pollinator import constants
 from pollinator.ipfs_to_json import write_folder
 
 
-@retry(tries=450, delay=2)
+@retry(tries=450, delay=4)
 def cogmodel_can_start_healthy():
     """Wait for the cogmodel to load and return a healthy status code
     If no docker command is running anymore, throw an exception"""
@@ -26,11 +26,11 @@ def cogmodel_can_start_healthy():
     # check that it is healthy. This step might fail and and be retried
     response = requests.get("http://localhost:5000/")
 
-    print(os.popen("cat /tmp/ipfs/output/logs").read())
+    # print(os.popen("cat /tmp/ipfs/output/logs").read())
     return response.status_code == 200
 
 
-@retry(tries=60, delay=1)
+@retry(tries=60, delay=4)
 def wait_for_docker_container(cog_cmd):
     logging.info(cog_cmd)
     os.system(cog_cmd)
@@ -44,7 +44,7 @@ def wait_for_docker_container(cog_cmd):
     #         raise Exception(docker_logs)
 
 
-@retry(tries=60, delay=1)
+@retry(tries=60, delay=4)
 def wait_until_cogmodel_is_free():
     logging.info("docker kill cogmodel")
     os.system("docker kill cogmodel")
@@ -75,7 +75,7 @@ class RunningCogModel:
         self.cog_cmd = (
             f'bash -c "docker run --rm --name cogmodel -p 5000:5000 '
             f"--mount type=bind,source={output_path},target=/outputs "
-            f'{constants.gpu_flag} {image} &> {output_path}/log" &'
+            f'{constants.gpu_flag} {image} &>> {output_path}/log" &'
         )
         logging.info(f"Initializing cog command: {self.cog_cmd}")
 
