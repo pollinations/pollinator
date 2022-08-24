@@ -105,5 +105,5 @@ def start_container_and_perform_request_and_send_outputs(message):
             else:
                 success = True
         write_folder(output_path, "success", json.dumps(success))
-        os.system("docker logs cogmodel > /tmp/ipfs/output/container.log")
+        # os.system("docker logs cogmodel > /tmp/ipfs/output/container.log")
     return message, success
