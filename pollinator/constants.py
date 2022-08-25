@@ -12,7 +12,11 @@ from pollinator import utils
 
 
 ip = requests.get('http://ip.42.pl/raw').text
-hostname, _, _ = socket.gethostbyaddr(ip)
+try:
+    hostname, _, _ = socket.gethostbyaddr(ip)
+except:
+    hostname = ip
+
 
 load_dotenv()
 url: str = os.environ.get("SUPABASE_URL")
