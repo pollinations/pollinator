@@ -1,20 +1,18 @@
 import os
+import socket
 import time
 from functools import lru_cache
-from uuid import uuid4
 
 import requests
-import socket
 from dotenv import load_dotenv
 from supabase import Client, create_client
 
 from pollinator import utils
 
-
-ip = requests.get('http://ip.42.pl/raw').text
+ip = requests.get("http://ip.42.pl/raw").text
 try:
     hostname, _, _ = socket.gethostbyaddr(ip)
-except:
+except:  # noqa
     hostname = ip
 
 
