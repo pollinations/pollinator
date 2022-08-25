@@ -12,6 +12,8 @@ from typing import Any, Dict
 import psutil
 import timeout_decorator
 
+from pollinator import utils
+
 
 @timeout_decorator.timeout(20)
 def ipfs_dir_to_json(cid: str):
@@ -111,7 +113,7 @@ class BackgroundCommand:
         except subprocess.TimeoutExpired:
             pass
         if self.on_exit is not None:
-            os.system(self.on_exit)
+            utils.system(self.on_exit)
 
 
 def tree_kill(pid):
