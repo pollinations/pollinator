@@ -3,9 +3,10 @@ import os
 
 
 def system(cmd):
-    logging.info("OS.SYSTEM: ", cmd, "\n")
+    logging.info(f"OS.SYSTEM: {cmd}")
     return os.system(cmd)
 
 
 def popen(cmd):
-    return os.popen(cmd).read()
+    logging.info(f"OS.POPEN: {cmd}")
+    return os.popen(cmd)
