@@ -9,7 +9,10 @@ from supabase import Client, create_client
 
 from pollinator import utils
 
-ip = requests.get("http://ip.42.pl/raw").text
+try:
+    ip = requests.get("http://ip.42.pl/raw").text
+except: # noqa
+    ip = "?"
 try:
     hostname, _, _ = socket.gethostbyaddr(ip)
 except:  # noqa
