@@ -1,7 +1,6 @@
 import base64
 import json
 import logging
-import os
 import time
 import traceback
 from mimetypes import guess_extension
@@ -9,7 +8,7 @@ from mimetypes import guess_extension
 import requests
 from retry import retry
 
-from pollinator import constants
+from pollinator import constants, utils
 from pollinator.ipfs_to_json import write_folder
 
 
@@ -20,22 +19,22 @@ def cogmodel_can_start_healthy():
     logging.info("Checking if cogmodel is healthy...")
 
     # check that cogmodel is a running as a containere
-    if "cogmodel" not in os.popen("docker ps").read():
+    if "cogmodel" not in utils.popen("docker ps").read():
         logging.error("No running cogmodel found in docker ps. Exiting")
         return False
     # check that it is healthy. This step might fail and and be retried
     response = requests.get("http://localhost:5000/")
 
-    # print(os.popen("cat /tmp/ipfs/output/logs").read())
+    # print(utils.popen("cat /tmp/ipfs/output/logs").read())
     return response.status_code == 200
 
 
 @retry(tries=60, delay=4)
 def wait_for_docker_container(cog_cmd):
     logging.info(cog_cmd)
-    os.system(cog_cmd)
-    logging.error(f"Trying to find cog container: {os.popen('docker ps').read()}")
-    assert "cogmodel" in os.popen("docker ps").read()
+    utils.system(cog_cmd)
+    logging.error(f"Trying to find cog container: {utils.popen('docker ps').read()}")
+    assert "cogmodel" in utils.popen("docker ps").read()
     # with open("/tmp/ipfs/output/log", "r") as f:
     #     docker_logs = f.read()
     #     if "is already in use by container" in docker_logs:
@@ -47,8 +46,8 @@ def wait_for_docker_container(cog_cmd):
 @retry(tries=60, delay=4)
 def wait_until_cogmodel_is_free():
     logging.info("docker kill cogmodel")
-    os.system("docker kill cogmodel")
-    assert "cogmodel" not in os.popen("docker ps").read()
+    utils.system("docker kill cogmodel")
+    assert "cogmodel" not in utils.popen("docker ps").read()
     logging.info("cogmodel killed and is container name is free.")
     time.sleep(3)
 
@@ -121,7 +120,7 @@ def send_to_cog_container(inputs, output_path):
         write_folder(output_path, "success", "false")
         try:
             print("Unhealthy cog model with these logs:")
-            print(os.popen("docker logs cogmodel").read())
+            print(utils.popen("docker logs cogmodel").read())
         except:  # noqa
             pass
         kill_cog_model()

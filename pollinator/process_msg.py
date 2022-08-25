@@ -4,7 +4,7 @@ import logging
 import os
 import traceback
 
-from pollinator import constants
+from pollinator import constants, utils
 from pollinator.cog_handler import (
     RunningCogModel,
     kill_cog_model,
@@ -56,8 +56,8 @@ def process_message(message):
         print("Pollen set to done in db: ", data)
         logging.info(f"Got CID: {cid}. Triggering pinning and social post")
         # run pinning and social post
-        os.system(f"node /usr/local/bin/pinning-cli.js {cid}")
-        os.system(f"node /usr/local/bin/social-post-cli.js {cid}")
+        utils.system(f"node /usr/local/bin/pinning-cli.js {cid}")
+        utils.system(f"node /usr/local/bin/social-post-cli.js {cid}")
         logging.info("done pinning and social post")
 
     except Exception as e:  # noqa
@@ -105,5 +105,5 @@ def start_container_and_perform_request_and_send_outputs(message):
             else:
                 success = True
         write_folder(output_path, "success", json.dumps(success))
-        # os.system("docker logs cogmodel > /tmp/ipfs/output/container.log")
+        # utils.system("docker logs cogmodel > /tmp/ipfs/output/container.log")
     return message, success
