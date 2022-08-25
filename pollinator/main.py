@@ -11,7 +11,7 @@ from pollinator.process_msg import process_message
 
 logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.INFO)
 
-print(constants.worker)
+print(constants.hostname)
 
 
 @click.command()
@@ -96,7 +96,7 @@ def lock_message(message):
             {
                 "processing_started": True,
                 "pollinator_group": constants.pollinator_group,
-                "worker": constants.worker,
+                "worker": constants.hostname,
             }
         )
         .eq("input", message["input"])

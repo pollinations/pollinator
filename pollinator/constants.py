@@ -1,13 +1,20 @@
 import os
+import socket
 import time
 from functools import lru_cache
-from uuid import uuid4
 
 import requests
 from dotenv import load_dotenv
 from supabase import Client, create_client
 
 from pollinator import utils
+
+ip = requests.get("http://ip.42.pl/raw").text
+try:
+    hostname, _, _ = socket.gethostbyaddr(ip)
+except:  # noqa
+    hostname = ip
+
 
 load_dotenv()
 url: str = os.environ.get("SUPABASE_URL")
@@ -21,7 +28,6 @@ has_gpu = utils.system("nvidia-smi") == 0
 gpu_flag = "--gpus all" if has_gpu else ""
 
 pollinator_group = os.environ.get("POLLINATOR_GROUP", "T4")
-worker = str(uuid4().hex)[:5]
 
 print("Pollinator group:", pollinator_group)
 
