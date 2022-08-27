@@ -76,7 +76,3 @@ logging.info(f"DB: {db_name}")
 logging.info(f"IP: {ip}")
 logging.info(f"hostname: {hostname}")
 logging.info(f"GPU: {has_gpu}")
-
-
-if __name__ == "__main__":
-    print(available_models())
