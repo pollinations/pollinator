@@ -11,19 +11,18 @@ This involves:
 Host environment assumptions:
 - there is a ~/.env file with all secrets and environment variables
 """
-import os
-import dotenv
 import json
+import logging
+import os
 import time
 from urllib.request import urlopen
-import logging
-import datetime as dt
 
+import dotenv
 
 dotenv.load_dotenv()
 
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")  
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
 
 home_dir = os.environ["HOME"]
@@ -42,11 +41,11 @@ def log(msg):
 
 
 def system(cmd):
-    log("-"*80)
+    log("-" * 80)
     log(cmd)
     result = os.popen(cmd).read()
     log(result)
-    log("-"*80)
+    log("-" * 80)
     return result
 
 
@@ -67,7 +66,9 @@ def pull(image):
         --username AWS \
         --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com
     docker pull {}
-    """.format(image)
+    """.format(
+        image
+    )
     response = system(pull_cmd)
     is_updated = "Status: Downloaded newer image for" in response
     return is_updated
@@ -75,12 +76,19 @@ def pull(image):
 
 def fetch_images():
     log("Fetching images")
-    images = load_web_json("https://raw.githubusercontent.com/pollinations/model-index/main/images.json")
-    metadata = load_web_json("https://raw.githubusercontent.com/pollinations/model-index/main/metadata.json")
+    images = load_web_json(
+        "https://raw.githubusercontent.com/pollinations/model-index/main/images.json"
+    )
+    metadata = load_web_json(
+        "https://raw.githubusercontent.com/pollinations/model-index/main/metadata.json"
+    )
 
     for _, image in images.items():
         try:
-            assert pollinator_group in metadata[image.split("@")[0]]["meta"]["pollinator_group"]
+            assert (
+                pollinator_group
+                in metadata[image.split("@")[0]]["meta"]["pollinator_group"]
+            )
         except (AssertionError, KeyError):
             log(f"# Ignore {image}")
             continue

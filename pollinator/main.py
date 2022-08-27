@@ -1,11 +1,11 @@
 import logging
+import sys
 import time
 import traceback
-import sys
 
 import click
-from realtime.connection import Socket
 import docker
+from realtime.connection import Socket
 
 from pollinator import cog_handler, constants
 from pollinator.constants import supabase, supabase_api_key, supabase_id
@@ -69,15 +69,16 @@ def check_pollinator_updates():
     try:
         running_pollinator_image = docker_client.containers.get("pollinator").image
     except docker.errors.NotFound:
-        logging.info("No pollinator container running. This must be the dev environment.")
+        logging.info(
+            "No pollinator container running. This must be the dev environment."
+        )
         return
-    logging.info(f"Pollinator is up to date")
+    logging.info("Pollinator is up to date")
     latest_pollinator_image = docker_client.images.get(constants.pollinator_image)
     if running_pollinator_image != latest_pollinator_image:
         logging.info("Pollinator image has changed, restarting container")
         time.sleep(5)
         sys.exit(0)
-
 
 
 def maybe_process(message):

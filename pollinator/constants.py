@@ -1,8 +1,8 @@
+import logging
 import os
 import socket
 import time
 from functools import lru_cache
-import logging
 
 import requests
 from dotenv import load_dotenv
