@@ -18,7 +18,7 @@ do
         bash -c "$1" &
         PID_OF_CHILD=$!
         wait $PID_OF_CHILD
-        sleep 1 # TODO 60
+        sleep 60 # TODO 60
 done
 
 # bash infinite_loop.sh "bash update_agent.sh"
