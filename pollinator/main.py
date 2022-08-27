@@ -1,9 +1,11 @@
 import logging
 import time
 import traceback
+import sys
 
 import click
 from realtime.connection import Socket
+import docker
 
 from pollinator import cog_handler, constants
 from pollinator.constants import supabase, supabase_api_key, supabase_id
@@ -12,6 +14,8 @@ from pollinator.process_msg import process_message
 logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.INFO)
 
 print(constants.hostname)
+
+docker_client = docker.from_env()
 
 
 @click.command()
@@ -59,7 +63,25 @@ def get_task_from_db():
     return None
 
 
+def check_pollinator_updates():
+    """Check if the image of the currently running container has the same
+    hash as the latest pollinator. If not, kill the running container"""
+    try:
+        running_pollinator_image = docker_client.containers.get("pollinator").image
+    except docker.errors.NotFound:
+        logging.info("No pollinator container running. This must be the dev environment.")
+        return
+    logging.info(f"Pollinator is up to date")
+    latest_pollinator_image = docker_client.images.get(constants.pollinator_image)
+    if running_pollinator_image != latest_pollinator_image:
+        logging.info("Pollinator image has changed, restarting container")
+        time.sleep(5)
+        sys.exit(0)
+
+
+
 def maybe_process(message):
+    check_pollinator_updates()
     if message["image"] not in constants.available_models():
         logging.info(f"Ignoring message for {message['image']}")
         return None

@@ -2,6 +2,7 @@ import os
 import socket
 import time
 from functools import lru_cache
+import logging
 
 import requests
 from dotenv import load_dotenv
@@ -29,10 +30,11 @@ test_image = "no-gpu-test-image"
 i_am_busy = False
 has_gpu = utils.system("nvidia-smi") == 0
 gpu_flag = "--gpus all" if has_gpu else ""
+pollinator_image = os.environ.get("POLLINATOR_IMAGE")
+
 
 pollinator_group = os.environ.get("POLLINATOR_GROUP", "T4")
 
-print("Pollinator group:", pollinator_group)
 
 model_index = (
     "https://raw.githubusercontent.com/pollinations/model-index/main/metadata.json"
@@ -65,6 +67,15 @@ def available_models_(ttl_hash=None):
 
 def available_models():
     return available_models_(get_ttl_hash())
+
+
+logging.info(f"Pollinator group: {pollinator_group}")
+logging.info(f"Pollinator image: {pollinator_image}")
+logging.info(f"Available models: {available_models()}")
+logging.info(f"DB: {db_name}")
+logging.info(f"IP: {ip}")
+logging.info(f"hostname: {hostname}")
+logging.info(f"GPU: {has_gpu}")
 
 
 if __name__ == "__main__":
