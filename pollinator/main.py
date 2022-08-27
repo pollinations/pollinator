@@ -73,12 +73,12 @@ def check_pollinator_updates():
             "No pollinator container running. This must be the dev environment."
         )
         return
-    logging.info("Pollinator is up to date")
     latest_pollinator_image = docker_client.images.get(constants.pollinator_image)
     if running_pollinator_image != latest_pollinator_image:
-        logging.info("Pollinator image has changed, restarting container")
-        time.sleep(5)
+        print("Pollinator image has changed, restarting container", flush=True)
         sys.exit(0)
+    else:
+        logging.info("Pollinator is up to date")
 
 
 def maybe_process(message):
