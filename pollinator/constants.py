@@ -72,7 +72,7 @@ def available_models():
 logging.info(f"Pollinator group: {pollinator_group}")
 logging.info(f"Pollinator image: {pollinator_image}")
 logging.info(f"Available models: {available_models()}")
-logging.info(f"DB: {db_name}")
+logging.info(f"DB (env): {os.environ.get('DB_NAME')}")
 logging.info(f"IP: {ip}")
 logging.info(f"hostname: {hostname}")
 logging.info(f"GPU: {has_gpu}")
