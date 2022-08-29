@@ -49,7 +49,7 @@ class RunningCogModel:
             ]
         else:
             gpus = []
-        self.container = docker_client.containers.run(
+        docker_client.containers.run(
             self.image,
             detach=True,
             name="cogmodel",
@@ -65,8 +65,11 @@ class RunningCogModel:
 
     def __exit__(self, type, value, traceback):
         # write container logs to output folder
-        logs = self.container.logs(stdout=True, stderr=True).decode("utf-8")
-        write_folder(self.output_path, "container.log", logs)
+        try:
+            logs = docker_client.containers.get("cogmodel").logs(stdout=True, stderr=True).decode("utf-8")
+            write_folder(self.output_path, "container.log", logs)
+        except (docker.errors.NotFound, docker.errors.APIError):
+            pass
 
     def wait_until_cogmodel_is_healthy(self, timeout=20 * 60):
         # Wait for the container to start
@@ -106,7 +109,6 @@ def send_to_cog_container(inputs, output_path):
     write_folder(output_path, "time_start", str(int(time.time())))
 
     if response.status_code != 200:
-        logging.error(response.text)
         write_folder(output_path, "cog_response", json.dumps(response.text))
         write_folder(output_path, "success", "false")
         try:
