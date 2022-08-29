@@ -105,13 +105,13 @@ class BackgroundCommand:
     def __exit__(self, type, value, traceback):
         logging.info(f"Killing background command: {self.cmd}")
         tree_kill(self.proc.pid)
-        try:
-            logs, errors = self.proc.communicate(timeout=2)
-            logs, errors = logs.decode("utf-8"), errors.decode("utf-8")
-            logging.info(f"   Logs: {logs}")
-            logging.error(f"   errors: {errors}")
-        except subprocess.TimeoutExpired:
-            pass
+        # try:
+        #     logs, errors = self.proc.communicate(timeout=2)
+        #     logs, errors = logs.decode("utf-8"), errors.decode("utf-8")
+        #     logging.info(f"   Logs: {logs}")
+        #     logging.error(f"   errors: {errors}")
+        # except subprocess.TimeoutExpired:
+        #     pass
         if self.on_exit is not None:
             utils.system(self.on_exit)
 

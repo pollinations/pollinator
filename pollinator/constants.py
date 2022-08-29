@@ -4,6 +4,7 @@ import socket
 import time
 from functools import lru_cache
 
+import docker
 import requests
 from dotenv import load_dotenv
 from supabase import Client, create_client
@@ -41,8 +42,15 @@ model_index = (
 )
 
 
+docker_client = docker.from_env()
+
+
 def image_exists(image_name):
-    return image_name.split("@")[0] in utils.popen(f"docker images {image_name}").read()
+    try:
+        docker_client.images.get(image_name)
+        return True
+    except docker.errors.ImageNotFound:
+        return False
 
 
 def get_ttl_hash(seconds=300):
