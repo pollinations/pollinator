@@ -66,7 +66,11 @@ class RunningCogModel:
     def __exit__(self, type, value, traceback):
         # write container logs to output folder
         try:
-            logs = docker_client.containers.get("cogmodel").logs(stdout=True, stderr=True).decode("utf-8")
+            logs = (
+                docker_client.containers.get("cogmodel")
+                .logs(stdout=True, stderr=True)
+                .decode("utf-8")
+            )
             write_folder(self.output_path, "container.log", logs)
         except (docker.errors.NotFound, docker.errors.APIError):
             pass
