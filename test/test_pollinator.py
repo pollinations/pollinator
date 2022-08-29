@@ -70,7 +70,12 @@ def test_many_open_requests_in_db():
         send_valid_dummy_request()
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
         time.sleep(30)
-    pollen = supabase.table(constants.db_name).select("*").order("end_time", desc=False).execute()
+    pollen = (
+        supabase.table(constants.db_name)
+        .select("*")
+        .order("end_time", desc=False)
+        .execute()
+    )
     assert pollen.data[0]["request_submit_time"] < pollen.data[1]["request_submit_time"]
     assert_success_is_not(None)
     assert_success_is_not(False)
@@ -86,7 +91,12 @@ def test_no_open_request_subscribe_and_wait():
         for _ in range(2):
             send_valid_dummy_request()
         time.sleep(30)
-    pollen = supabase.table(constants.db_name).select("*").order("end_time", desc=False).execute()
+    pollen = (
+        supabase.table(constants.db_name)
+        .select("*")
+        .order("end_time", desc=False)
+        .execute()
+    )
     assert pollen.data[0]["request_submit_time"] < pollen.data[1]["request_submit_time"]
     assert_success_is_not(None)
     assert_success_is_not(False)
@@ -102,7 +112,6 @@ def test_invalid_request_in_db():
         for _ in range(2):
             send_valid_dummy_request(image="non-existing-image")
         time.sleep(30)
-    assert_success_is_not(None)
     assert_success_is_not(True)
 
 
@@ -114,7 +123,12 @@ def test_priorities_are_respected():
     send_valid_dummy_request()
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
         time.sleep(30)
-    pollen = supabase.table(constants.db_name).select("*").order("end_time", desc=False).execute()
+    pollen = (
+        supabase.table(constants.db_name)
+        .select("*")
+        .order("end_time", desc=False)
+        .execute()
+    )
     assert pollen.data[0]["priority"] == 1
     assert pollen.data[1]["priority"] == 0
     assert pollen.data[2]["priority"] == 0
