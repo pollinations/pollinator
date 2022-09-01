@@ -124,12 +124,7 @@ def start_pollinator_if_not_running():
 
 
 def main():
-    needs_restart = fetch_pollinator()
-    if needs_restart:
-        restart_pollinator()
-    else:
-        # just in case the container has crashed
-        start_pollinator_if_not_running()
+    start_pollinator_if_not_running()
     fetch_images()
 
 
