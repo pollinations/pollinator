@@ -103,14 +103,6 @@ def fetch_pollinator():
     return needs_restart
 
 
-def restart_pollinator():
-    # wait until container is down
-    while system("docker ps | grep pollinator | grep -v grep").strip() != "":
-        time.sleep(1)
-    # restart container
-    start_pollinator_if_not_running()
-
-
 def start_pollinator_if_not_running():
     pollinator_cmd = f"""docker run {gpu_flag} --rm \\
         --network host \\
@@ -124,6 +116,7 @@ def start_pollinator_if_not_running():
 
 
 def main():
+    fetch_pollinator()
     start_pollinator_if_not_running()
     fetch_images()
 
