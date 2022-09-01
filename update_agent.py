@@ -14,7 +14,6 @@ Host environment assumptions:
 import json
 import logging
 import os
-import time
 from urllib.request import urlopen
 
 import dotenv
