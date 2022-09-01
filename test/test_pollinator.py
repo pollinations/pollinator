@@ -142,4 +142,8 @@ def assert_success_is_not(success=None):
 
 
 if __name__ == "__main__":
+    BackgroundCommand = DebugCommand  # noqa
+    test_many_open_requests_in_db()
     test_priorities_are_respected()
+    test_no_open_request_subscribe_and_wait()
+    test_invalid_request_in_db()
