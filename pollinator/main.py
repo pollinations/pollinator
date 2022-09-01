@@ -141,7 +141,7 @@ def subscribe_while_idle():
     url = f"wss://{supabase_id}.supabase.co/realtime/v1/websocket?apikey={supabase_api_key}&vsn=1.0.0"
     s = Socket(url)
 
-    while True:
+    for _ in range(100):
         try:
             s.connect()
 
@@ -167,6 +167,10 @@ def subscribe_while_idle():
             logging.info(f"Socket stopped listening, restarting: {e}")
             constants.i_am_busy = False
             traceback.print_exc()
+    try:
+        docker_client.containers.get("pollinator").kill()
+    except docker.errors.NotFound:
+        sys.exit(0)
 
 
 if __name__ == "__main__":
