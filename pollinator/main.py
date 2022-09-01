@@ -1,8 +1,10 @@
 import logging
+import sys
 import time
 import traceback
 
 import click
+import docker
 from realtime.connection import Socket
 
 from pollinator import cog_handler, constants
@@ -12,6 +14,8 @@ from pollinator.process_msg import process_message
 logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.INFO)
 
 print(constants.hostname)
+
+docker_client = docker.from_env()
 
 
 @click.command()
@@ -39,6 +43,7 @@ def get_task_from_db():
         .eq("processing_started", False)
         .eq("image", cog_handler.loaded_model)
         .in_("image", constants.available_models())
+        .order("priority", desc=True)
         .order("request_submit_time")
         .execute()
     )
@@ -50,6 +55,7 @@ def get_task_from_db():
         .select("*")
         .eq("processing_started", False)
         .in_("image", constants.available_models())
+        .order("priority", desc=True)
         .order("request_submit_time")
         .execute()
     )
@@ -59,7 +65,29 @@ def get_task_from_db():
     return None
 
 
+def check_pollinator_updates():
+    """Check if the image of the currently running container has the same
+    hash as the latest pollinator. If not, kill the running container"""
+    try:
+        running_pollinator_image = docker_client.containers.get("pollinator").image
+    except docker.errors.NotFound:
+        logging.info(
+            "No pollinator container running. This must be the dev environment."
+        )
+        return
+    latest_pollinator_image = docker_client.images.get(constants.pollinator_image)
+    if running_pollinator_image != latest_pollinator_image:
+        print("Pollinator image has changed, restarting container", flush=True)
+        try:
+            docker_client.containers.get("pollinator").kill()
+        except docker.errors.NotFound:
+            sys.exit(0)
+    else:
+        logging.info("Pollinator is up to date")
+
+
 def maybe_process(message):
+    check_pollinator_updates()
     if message["image"] not in constants.available_models():
         logging.info(f"Ignoring message for {message['image']}")
         return None
@@ -113,7 +141,7 @@ def subscribe_while_idle():
     url = f"wss://{supabase_id}.supabase.co/realtime/v1/websocket?apikey={supabase_api_key}&vsn=1.0.0"
     s = Socket(url)
 
-    while True:
+    for _ in range(100):
         try:
             s.connect()
 
@@ -139,6 +167,10 @@ def subscribe_while_idle():
             logging.info(f"Socket stopped listening, restarting: {e}")
             constants.i_am_busy = False
             traceback.print_exc()
+    try:
+        docker_client.containers.get("pollinator").kill()
+    except docker.errors.NotFound:
+        sys.exit(0)
 
 
 if __name__ == "__main__":

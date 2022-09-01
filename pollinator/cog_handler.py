@@ -5,82 +5,80 @@ import time
 import traceback
 from mimetypes import guess_extension
 
+import docker
 import requests
-from retry import retry
 
 from pollinator import constants, utils
 from pollinator.ipfs_to_json import write_folder
 
-
-@retry(tries=450, delay=4)
-def cogmodel_can_start_healthy():
-    """Wait for the cogmodel to load and return a healthy status code
-    If no docker command is running anymore, throw an exception"""
-    logging.info("Checking if cogmodel is healthy...")
-
-    # check that cogmodel is a running as a containere
-    if "cogmodel" not in utils.popen("docker ps").read():
-        logging.error("No running cogmodel found in docker ps. Exiting")
-        return False
-    # check that it is healthy. This step might fail and and be retried
-    response = requests.get("http://localhost:5000/")
-
-    # print(utils.popen("cat /tmp/ipfs/output/logs").read())
-    return response.status_code == 200
+docker_client = docker.from_env()
 
 
-@retry(tries=60, delay=4)
-def wait_for_docker_container(cog_cmd):
-    logging.info(cog_cmd)
-    utils.system(cog_cmd)
-    logging.error(f"Trying to find cog container: {utils.popen('docker ps').read()}")
-    assert "cogmodel" in utils.popen("docker ps").read()
-    # with open("/tmp/ipfs/output/log", "r") as f:
-    #     docker_logs = f.read()
-    #     if "is already in use by container" in docker_logs:
-    #         logging.error(f"container name cogmodel is already in use: {docker_logs}")
-    #         kill_cog_model()
-    #         raise Exception(docker_logs)
-
-
-@retry(tries=60, delay=4)
-def wait_until_cogmodel_is_free():
-    logging.info("docker kill cogmodel")
-    utils.system("docker kill cogmodel")
-    assert "cogmodel" not in utils.popen("docker ps").read()
-    logging.info("cogmodel killed and is container name is free.")
-    time.sleep(3)
-
-
-def kill_cog_model():
-    try:
-        wait_until_cogmodel_is_free()
-        logging.info(f"Killed previous model ({loaded_model})")
-    except Exception as e:  # noqa
-        logging.error(f"Error killing cogmodel: {type(e)}{e}")
+class UnhealthyCogContainer(Exception):
+    pass
 
 
 loaded_model = None
 
 
-class UnhealthyModel(Exception):
-    pass
-
-
 class RunningCogModel:
     def __init__(self, image, output_path):
-        self.image = image
-        # Start cog container
-        self.cog_cmd = (
-            f'bash -c "docker run --rm --name cogmodel -p 5000:5000 '
-            f"--mount type=bind,source={output_path},target=/outputs "
-            f'{constants.gpu_flag} {image} &>> {output_path}/log" &'
-        )
-        logging.info(f"Initializing cog command: {self.cog_cmd}")
+        self.image_name = image
+        self.image = docker_client.images.get(image)
+        self.output_path = output_path
+        self.container = None
 
     def __enter__(self):
         global loaded_model
-        if loaded_model == self.image:
+        # Check if the container is already running
+        running_images = [
+            container.image for container in docker_client.containers.list()
+        ]
+        if self.image in running_images:
+            logging.info(f"Model already loaded: {self.image}")
+            return
+        # Kill the running container if it is not the same model
+        kill_cog_model()
+        # Start the container
+        if constants.has_gpu:
+            gpus = [
+                docker.types.DeviceRequest(
+                    count=1,
+                    capabilities=[["gpu"]],
+                )
+            ]
+        else:
+            gpus = []
+        docker_client.containers.run(
+            self.image,
+            detach=True,
+            name="cogmodel",
+            ports={"5000/tcp": 5000},
+            volumes={self.output_path: {"bind": "/outputs", "mode": "rw"}},
+            remove=True,
+            device_requests=gpus,
+        )
+        logging.info(f"Starting {self.image}: {self.container}")
+        # Wait for the container to start
+        self.wait_until_cogmodel_is_healthy()
+        loaded_model = self.image_name
+
+    def __exit__(self, type, value, traceback):
+        # write container logs to output folder
+        try:
+            logs = (
+                docker_client.containers.get("cogmodel")
+                .logs(stdout=True, stderr=True)
+                .decode("utf-8")
+            )
+            write_folder(self.output_path, "container.log", logs)
+        except (docker.errors.NotFound, docker.errors.APIError):
+            pass
+
+    def wait_until_cogmodel_is_healthy(self, timeout=20 * 60):
+        # Wait for the container to start
+        logging.info(f"Waiting for {self.image} to start")
+        for i in range(timeout):
             try:
                 assert (
                     requests.get(
@@ -88,20 +86,20 @@ class RunningCogModel:
                     ).status_code
                     == 200
                 )
-                logging.info(f"Model already loaded: {self.image}")
+                logging.info(f"Model healthy: {self.image}")
                 return
             except:  # noqa
-                logging.info(f"Loaded model unhealthy, restarting: {self.image}")
-        kill_cog_model()
-        logging.info(f"Starting {self.image}: {self.cog_cmd}")
-        wait_for_docker_container(self.cog_cmd)
-        if not cogmodel_can_start_healthy():
-            raise UnhealthyModel()
+                time.sleep(1)
+        raise UnhealthyCogContainer(f"Model unhealthy: {self.image}")
 
-        loaded_model = self.image
 
-    def __exit__(self, type, value, traceback):
-        pass
+def kill_cog_model():
+    for _ in range(5):
+        try:
+            docker_client.containers.get("cogmodel").kill()
+            time.sleep(1)
+        except docker.errors.NotFound:
+            return
 
 
 def send_to_cog_container(inputs, output_path):
@@ -115,7 +113,6 @@ def send_to_cog_container(inputs, output_path):
     write_folder(output_path, "time_start", str(int(time.time())))
 
     if response.status_code != 200:
-        logging.error(response.text)
         write_folder(output_path, "cog_response", json.dumps(response.text))
         write_folder(output_path, "success", "false")
         try:

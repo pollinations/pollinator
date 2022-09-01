@@ -1,8 +1,10 @@
+import logging
 import os
 import socket
 import time
 from functools import lru_cache
 
+import docker
 import requests
 from dotenv import load_dotenv
 from supabase import Client, create_client
@@ -29,18 +31,26 @@ test_image = "no-gpu-test-image"
 i_am_busy = False
 has_gpu = utils.system("nvidia-smi") == 0
 gpu_flag = "--gpus all" if has_gpu else ""
+pollinator_image = os.environ.get("POLLINATOR_IMAGE")
+
 
 pollinator_group = os.environ.get("POLLINATOR_GROUP", "T4")
 
-print("Pollinator group:", pollinator_group)
 
 model_index = (
     "https://raw.githubusercontent.com/pollinations/model-index/main/metadata.json"
 )
 
 
+docker_client = docker.from_env()
+
+
 def image_exists(image_name):
-    return image_name.split("@")[0] in utils.popen(f"docker images {image_name}").read()
+    try:
+        docker_client.images.get(image_name)
+        return True
+    except docker.errors.ImageNotFound:
+        return False
 
 
 def get_ttl_hash(seconds=300):
@@ -67,5 +77,10 @@ def available_models():
     return available_models_(get_ttl_hash())
 
 
-if __name__ == "__main__":
-    print(available_models())
+logging.info(f"Pollinator group: {pollinator_group}")
+logging.info(f"Pollinator image: {pollinator_image}")
+logging.info(f"Available models: {available_models()}")
+logging.info(f"DB (env): {os.environ.get('DB_NAME')}")
+logging.info(f"IP: {ip}")
+logging.info(f"hostname: {hostname}")
+logging.info(f"GPU: {has_gpu}")
