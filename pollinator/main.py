@@ -78,7 +78,10 @@ def check_pollinator_updates():
     latest_pollinator_image = docker_client.images.get(constants.pollinator_image)
     if running_pollinator_image != latest_pollinator_image:
         print("Pollinator image has changed, restarting container", flush=True)
-        sys.exit(0)
+        try:
+            docker_client.containers.get("pollinator").kill()
+        except docker.errors.NotFound:
+            sys.exit(0)
     else:
         logging.info("Pollinator is up to date")
 
