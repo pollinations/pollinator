@@ -65,25 +65,25 @@ jobs:
           mkdir -p /tmp/ipfs/input
           docker run -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs -e SUPABASE_API_KEY=$SUPABASE_API_KEY -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_ID=$SUPABASE_ID -e POLLINATOR_GROUP=cpu --network host image:test pytest -o log_cli=true test
 
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v1
-      #   with:
-      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws-region: us-east-1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
   
-      # - name: Login to Amazon ECR
-      #   id: login-ecr
-      #   uses: aws-actions/amazon-ecr-login@v1
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
       
-      # - name: Create repository if it doesn't exist yet
-      #   run: aws ecr describe-repositories --repository-names ${{ github.repository }} || aws ecr create-repository --repository-name ${{ github.repository }}
+      - name: Create repository if it doesn't exist yet
+        run: aws ecr describe-repositories --repository-names ${{ github.repository }} || aws ecr create-repository --repository-name ${{ github.repository }}
 
-      # - name: Tag and push image to Amazon ECR
-      #   env:
-      #     ECR_REGISTRY: 614871946825.dkr.ecr.us-east-1.amazonaws.com #${{ steps.login-ecr.outputs.registry }}
-      #     ECR_REPOSITORY: ${{ github.repository }}
-      #   run: |
-      #     echo Tagging image as $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-      #     docker tag image:test $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: Tag and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: 614871946825.dkr.ecr.us-east-1.amazonaws.com #${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ github.repository }}
+        run: |
+          echo Tagging image as $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag image:test $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
