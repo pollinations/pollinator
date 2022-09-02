@@ -1,15 +1,15 @@
 import base64
+import datetime as dt
 import json
 import logging
 import time
-import datetime as dt
 import traceback
 from mimetypes import guess_extension
 
 import docker
 import requests
 
-from pollinator import constants, utils
+from pollinator import constants
 from pollinator.ipfs_to_json import write_folder
 
 docker_client = docker.from_env()
@@ -39,7 +39,9 @@ class RunningCogModel:
             container.image for container in docker_client.containers.list()
         ]
         self.pollen_start_time = dt.datetime.now()
-        if self.image in running_images: # and self.pollen_since_container_start < MAX_NUM_POLLEN_UNTIL_RESTART:
+        if (
+            self.image in running_images
+        ):  # and self.pollen_since_container_start < MAX_NUM_POLLEN_UNTIL_RESTART:
             self.pollen_since_container_start += 1
             logging.info(f"Model already loaded: {self.image}")
             return
