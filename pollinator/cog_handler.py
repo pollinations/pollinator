@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import time
+import datetime as dt
 import traceback
 from mimetypes import guess_extension
 
@@ -19,6 +20,7 @@ class UnhealthyCogContainer(Exception):
 
 
 loaded_model = None
+# MAX_NUM_POLLEN_UNTIL_RESTART = 30
 
 
 class RunningCogModel:
@@ -27,6 +29,8 @@ class RunningCogModel:
         self.image = docker_client.images.get(image)
         self.output_path = output_path
         self.container = None
+        self.pollen_start_time = None
+        self.pollen_since_container_start = 0
 
     def __enter__(self):
         global loaded_model
@@ -34,11 +38,14 @@ class RunningCogModel:
         running_images = [
             container.image for container in docker_client.containers.list()
         ]
-        if self.image in running_images:
+        self.pollen_start_time = dt.datetime.now()
+        if self.image in running_images: # and self.pollen_since_container_start < MAX_NUM_POLLEN_UNTIL_RESTART:
+            self.pollen_since_container_start += 1
             logging.info(f"Model already loaded: {self.image}")
             return
         # Kill the running container if it is not the same model
         kill_cog_model()
+        self.pollen_since_container_start = 0
         # Start the container
         if constants.has_gpu:
             gpus = [
@@ -68,7 +75,7 @@ class RunningCogModel:
         try:
             logs = (
                 docker_client.containers.get("cogmodel")
-                .logs(stdout=True, stderr=True)
+                .logs(stdout=True, stderr=True, since=self.pollen_start_time)
                 .decode("utf-8")
             )
             write_folder(self.output_path, "container.log", logs)
@@ -115,11 +122,6 @@ def send_to_cog_container(inputs, output_path):
     if response.status_code != 200:
         write_folder(output_path, "cog_response", json.dumps(response.text))
         write_folder(output_path, "success", "false")
-        try:
-            print("Unhealthy cog model with these logs:")
-            print(utils.popen("docker logs cogmodel").read())
-        except:  # noqa
-            pass
         kill_cog_model()
         raise Exception(
             f"Error while sending message to cog container: {response.text}"
