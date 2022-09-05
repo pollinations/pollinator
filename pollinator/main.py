@@ -27,8 +27,12 @@ def main(db_name):
 
 def poll_forever():
     while True:
-        finish_all_tasks()
-        time.sleep(1)
+        try:
+            finish_all_tasks()
+            time.sleep(1)
+        except Exception as e:
+            logging.error(e)
+            time.sleep(5)
 
 
 def finish_all_tasks():
