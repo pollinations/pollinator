@@ -5,11 +5,7 @@ import os
 import traceback
 
 from pollinator import constants, utils
-from pollinator.cog_handler import (
-    RunningCogModel,
-    kill_cog_model,
-    send_to_cog_container,
-)
+from pollinator.cog_handler import RunningCogModel, send_to_cog_container
 from pollinator.constants import available_models, supabase
 from pollinator.ipfs_to_json import (
     BackgroundCommand,
@@ -97,10 +93,10 @@ def start_container_and_perform_request_and_send_outputs(message):
         on_exit=f"pollinate-cli.js --send --path {ipfs_root} --once "
         f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}",
     ):
-        with RunningCogModel(image, output_path):
+        with RunningCogModel(image, output_path) as cogmodel:
             response = send_to_cog_container(inputs, output_path)
             if response.status_code == 500:
-                kill_cog_model()
+                cogmodel.shutdown()
                 success = False
             else:
                 success = True

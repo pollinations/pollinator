@@ -44,7 +44,7 @@ class RunningCogModel:
         ):  # and self.pollen_since_container_start < MAX_NUM_POLLEN_UNTIL_RESTART:
             self.pollen_since_container_start += 1
             logging.info(f"Model already loaded: {self.image}")
-            return
+            return self
         # Kill the running container if it is not the same model
         kill_cog_model()
         self.pollen_since_container_start = 0
@@ -71,9 +71,13 @@ class RunningCogModel:
         # Wait for the container to start
         self.wait_until_cogmodel_is_healthy()
         loaded_model = self.image_name
+        return self
 
     def __exit__(self, type, value, traceback):
         # write container logs to output folder
+        self.write_logs()
+
+    def write_logs(self):
         try:
             logs = (
                 docker_client.containers.get("cogmodel")
@@ -84,7 +88,11 @@ class RunningCogModel:
         except (docker.errors.NotFound, docker.errors.APIError):
             pass
 
-    def wait_until_cogmodel_is_healthy(self, timeout=20 * 60):
+    def shutdown(self):
+        self.write_logs()
+        kill_cog_model()
+
+    def wait_until_cogmodel_is_healthy(self, timeout=40 * 60):
         # Wait for the container to start
         logging.info(f"Waiting for {self.image} to start")
         for i in range(timeout):
