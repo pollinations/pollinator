@@ -1,14 +1,12 @@
 import logging
 import sys
 import time
-import traceback
 
 import click
 import docker
-from realtime.connection import Socket
 
 from pollinator import cog_handler, constants
-from pollinator.constants import supabase, supabase_api_key, supabase_id
+from pollinator.constants import supabase
 from pollinator.process_msg import process_message
 
 logging.basicConfig(format="%(asctime)s %(levelname)s:%(message)s", level=logging.INFO)
@@ -24,7 +22,6 @@ def main(db_name):
     constants.db_name = db_name
     """First finish all existing tasks, then go into infinite loop"""
     finish_all_tasks()
-    # subscribe_while_idle()
     poll_forever()
 
 
@@ -140,44 +137,6 @@ def lock_message(message):
     )
     if len(data.data) == 0:
         raise LockError(f"Message {message['input']} is already locked")
-
-
-def subscribe_while_idle():
-    """Subscribe to db inserts in supabase and wait for one to arrive.
-    As soon as one arrives, unsubscribe and return the message."""
-    url = f"wss://{supabase_id}.supabase.co/realtime/v1/websocket?apikey={supabase_api_key}&vsn=1.0.0"
-    s = Socket(url)
-
-    for _ in range(100):
-        try:
-            s.connect()
-
-            channel = s.set_channel(f"realtime:public:{constants.db_name}")
-
-            def unsubscribe_and_process(payload):
-                if constants.i_am_busy:
-                    print("Ignoring task, am busy")
-                    return
-                try:
-                    constants.i_am_busy = True
-                    maybe_process(payload["record"])
-                    finish_all_tasks()
-                except Exception:  # noqa
-                    logging.error("Exception catched in unsubscribe_and_process:")
-                    traceback.print_exc()
-                constants.i_am_busy = False
-                print("Ready to accept a task")
-
-            channel.join().on("INSERT", unsubscribe_and_process)
-            s.listen()
-        except Exception as e:
-            logging.info(f"Socket stopped listening, restarting: {e}")
-            constants.i_am_busy = False
-            traceback.print_exc()
-    try:
-        docker_client.containers.get("pollinator").kill()
-    except docker.errors.NotFound:
-        sys.exit(0)
 
 
 if __name__ == "__main__":
