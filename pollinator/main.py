@@ -24,7 +24,14 @@ def main(db_name):
     constants.db_name = db_name
     """First finish all existing tasks, then go into infinite loop"""
     finish_all_tasks()
-    subscribe_while_idle()
+    # subscribe_while_idle()
+    poll_forever()
+
+
+def poll_forever():
+    while True:
+        finish_all_tasks()
+        time.sleep(1)
 
 
 def finish_all_tasks():
