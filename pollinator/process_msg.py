@@ -95,7 +95,8 @@ def start_container_and_perform_request_and_send_outputs(message):
     ):
         with RunningCogModel(image, output_path) as cogmodel:
             with BackgroundCommand(
-                f"docker logs cogmodel -f --since {cogmodel.pollen_start_time.isoformat()} > {output_path}/log"
+                f"docker logs cogmodel -f --since {cogmodel.pollen_start_time.isoformat()} > {output_path}/log",
+                wait_before_exit=3,
             ):
                 response = send_to_cog_container(inputs, output_path)
                 if response.status_code == 500:

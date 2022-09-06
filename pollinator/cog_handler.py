@@ -75,7 +75,6 @@ class RunningCogModel:
 
     def __exit__(self, type, value, traceback):
         # write container logs to output folder
-        time.sleep(3)
         self.write_logs()
 
     def write_logs(self):

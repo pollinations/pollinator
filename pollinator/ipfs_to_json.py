@@ -89,9 +89,10 @@ def prepare_output_folder(output_path):
 
 
 class BackgroundCommand:
-    def __init__(self, cmd, on_exit=None):
+    def __init__(self, cmd, on_exit=None, wait_before_exit=0):
         self.cmd = cmd
         self.on_exit = on_exit
+        self.wait_before_exit = wait_before_exit
 
     def __enter__(self):
         self.proc = subprocess.Popen(
@@ -104,6 +105,7 @@ class BackgroundCommand:
 
     def __exit__(self, type, value, traceback):
         logging.info(f"Killing background command: {self.cmd}")
+        time.sleep(self.wait_before_exit)
         tree_kill(self.proc.pid)
         # try:
         #     logs, errors = self.proc.communicate(timeout=2)
