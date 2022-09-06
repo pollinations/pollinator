@@ -94,12 +94,15 @@ def start_container_and_perform_request_and_send_outputs(message):
         f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}",
     ):
         with RunningCogModel(image, output_path) as cogmodel:
-            response = send_to_cog_container(inputs, output_path)
-            if response.status_code == 500:
-                cogmodel.shutdown()
-                success = False
-            else:
-                success = True
+            with BackgroundCommand(
+                f"docker logs cogmodel -f --since {cogmodel.pollen_start_time.isoformat()} > {output_path}/log"
+            ):
+                response = send_to_cog_container(inputs, output_path)
+                if response.status_code == 500:
+                    cogmodel.shutdown()
+                    success = False
+                else:
+                    success = True
         write_folder(output_path, "success", json.dumps(success))
         # utils.system("docker logs cogmodel > /tmp/ipfs/output/container.log")
     return message, success
