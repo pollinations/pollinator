@@ -20,7 +20,7 @@ class UnhealthyCogContainer(Exception):
 
 
 loaded_model = None
-# MAX_NUM_POLLEN_UNTIL_RESTART = 30
+MAX_NUM_POLLEN_UNTIL_RESTART = 100
 
 
 class RunningCogModel:
@@ -35,13 +35,12 @@ class RunningCogModel:
     def __enter__(self):
         global loaded_model
         # Check if the container is already running
-        running_images = [
-            container.image for container in docker_client.containers.list()
-        ]
         self.pollen_start_time = dt.datetime.now()
-        if (
-            self.image in running_images
-        ):  # and self.pollen_since_container_start < MAX_NUM_POLLEN_UNTIL_RESTART:
+        try:
+            running_image = docker_client.containers.get("cogmodel").image
+        except docker.errors.NotFound:
+            running_image = None
+        if self.image == running_image and self.pollen_since_container_start < MAX_NUM_POLLEN_UNTIL_RESTART:
             self.pollen_since_container_start += 1
             logging.info(f"Model already loaded: {self.image}")
             return self
