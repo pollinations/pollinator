@@ -21,8 +21,45 @@ docker_client = docker.from_env()
 def main(db_name):
     constants.db_name = db_name
     """First finish all existing tasks, then go into infinite loop"""
+    check_if_chrashed()
     finish_all_tasks()
     poll_forever()
+
+
+def check_if_chrashed():
+    """If the worker crashed, the input cid is still in the file system.
+    In that case, we need to unlock the message in the db."""
+    # check if done=False and input_cid is in file system
+    try:
+        status_path = constants.input_path / "done"
+        with open(status_path, "r") as f:
+            done = f.read()
+        if done == "true":
+            return
+    except FileNotFoundError:
+        return
+    # We crashed, unlock the message and increase the attempt counter
+    try:
+        with open(constants.input_cid_path, "r") as f:
+            input_cid = f.read()
+        with open(constants.attempt_path, "r") as f:
+            attempt = int(f.read())
+        if attempt > constants.max_attempts:
+            logging.error(f"Too many attempts, giving up on {input_cid}")
+            supabase.table(constants.db_name).update({"success": False}).eq(
+                "input", input_cid
+            ).execute()
+            return
+        supabase.table(constants.db_name).update(
+            {
+                "processing_started": False,
+                "pollinator_group": None,
+                "worker": None,
+                "attempt": attempt + 1,
+            }
+        ).eq("input", input_cid).execute()
+    except FileNotFoundError:
+        pass
 
 
 def poll_forever():
@@ -134,6 +171,11 @@ def lock_message(message):
     )
     if len(data.data) == 0:
         raise LockError(f"Message {message['input']} is already locked")
+    # write input cid to disk in case the worker crashes
+    with open(constants.input_cid_path, "w") as f:
+        f.write(message["input"])
+    with open(constants.attempt_path, "w") as f:
+        f.write(str(message["attempt"]))
 
 
 if __name__ == "__main__":
