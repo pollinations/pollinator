@@ -43,34 +43,28 @@ def finish_all_tasks():
 
 def get_task_from_db():
     """Scan the db for tasks that are not in progress. If there are none, return None
-    If there are many, return the olderst one for the currently cog_handler.loaded_model.
-    If there are none for the cog_handler.loaded_model, return the oldest."""
-    data = (
-        supabase.table(constants.db_name)
-        .select("*")
-        .eq("processing_started", False)
-        .eq("image", cog_handler.loaded_model)
-        .in_("image", constants.available_models())
-        .order("priority", desc=True)
-        .order("request_submit_time")
-        .execute()
-    )
-    if len(data.data) > 0:
-        return data.data[0]
-    # No tasks found, include tasks for other images
-    data = (
-        supabase.table(constants.db_name)
+    If there are many, return one with the maximal priority.
+    If there are still many, return one with the currently loaded model.
+    If there are still many, return one with the oldest request_submit_time."""
+    candidates = (
+        supabase.table("pollen")
         .select("*")
         .eq("processing_started", False)
         .in_("image", constants.available_models())
         .order("priority", desc=True)
-        .order("request_submit_time")
+        .order("request_submit_time", desc=False)
         .execute()
-    )
-    if len(data.data) > 0:
-        return data.data[0]
-    # There is no task
-    return None
+    ).data
+    if len(candidates) == 0:
+        return None
+    priority = candidates[0]["priority"]
+    candidates = [c for c in candidates if c["priority"] == priority]
+    ready_candidates = [c for c in candidates if c["image"] == cog_handler.loaded_model]
+    if len(ready_candidates) > 0:
+        return ready_candidates[0]
+    else:
+        return candidates[0]
+
 
 
 def check_pollinator_updates():
