@@ -40,7 +40,10 @@ class RunningCogModel:
             running_image = docker_client.containers.get("cogmodel").image
         except docker.errors.NotFound:
             running_image = None
-        if self.image == running_image and self.pollen_since_container_start < MAX_NUM_POLLEN_UNTIL_RESTART:
+        if (
+            self.image == running_image
+            and self.pollen_since_container_start < MAX_NUM_POLLEN_UNTIL_RESTART
+        ):
             self.pollen_since_container_start += 1
             logging.info(f"Model already loaded: {self.image}")
             return self
