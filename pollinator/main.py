@@ -66,7 +66,6 @@ def get_task_from_db():
         return candidates[0]
 
 
-
 def check_pollinator_updates():
     """Check if the image of the currently running container has the same
     hash as the latest pollinator. If not, kill the running container"""
