@@ -118,6 +118,7 @@ def main():
     fetch_pollinator()
     start_pollinator_if_not_running()
     fetch_images()
+    system("docker system prune -f")
 
 
 if __name__ == "__main__":
