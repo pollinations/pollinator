@@ -32,7 +32,7 @@ def check_if_chrashed():
     In that case, we need to unlock the message in the db."""
     # check if done=False and input_cid is in file system
     try:
-        status_path = os.path.join(constants.input_path, "done")
+        status_path = os.path.join(constants.output_path, "done")
         with open(status_path, "r") as f:
             done = f.read()
         if done == "true":
