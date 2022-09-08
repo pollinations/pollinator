@@ -1,12 +1,17 @@
 import datetime as dt
 import json
 import logging
-import os
 import traceback
 
 from pollinator import constants, utils
 from pollinator.cog_handler import RunningCogModel, send_to_cog_container
-from pollinator.constants import available_models, supabase
+from pollinator.constants import (
+    available_models,
+    input_path,
+    ipfs_root,
+    output_path,
+    supabase,
+)
 from pollinator.ipfs_to_json import (
     BackgroundCommand,
     clean_folder,
@@ -14,10 +19,6 @@ from pollinator.ipfs_to_json import (
     prepare_output_folder,
     write_folder,
 )
-
-ipfs_root = os.path.abspath("/tmp/ipfs/")
-output_path = os.path.join(ipfs_root, "output")
-input_path = os.path.join(ipfs_root, "input")
 
 
 def process_message(message):

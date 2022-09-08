@@ -32,7 +32,12 @@ i_am_busy = False
 has_gpu = utils.system("nvidia-smi") == 0
 gpu_flag = "--gpus all" if has_gpu else ""
 pollinator_image = os.environ.get("POLLINATOR_IMAGE")
-
+input_cid_path = "/tmp/ipfs/input_cid"
+attempt_path = "/tmp/ipfs/attempt"
+max_attempts = 3
+ipfs_root = os.path.abspath("/tmp/ipfs/")
+output_path = os.path.join(ipfs_root, "output")
+input_path = os.path.join(ipfs_root, "input")
 
 pollinator_group = os.environ.get("POLLINATOR_GROUP", "T4")
 

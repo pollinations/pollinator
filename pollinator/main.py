@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import time
 
@@ -21,8 +22,45 @@ docker_client = docker.from_env()
 def main(db_name):
     constants.db_name = db_name
     """First finish all existing tasks, then go into infinite loop"""
+    check_if_chrashed()
     finish_all_tasks()
     poll_forever()
+
+
+def check_if_chrashed():
+    """If the worker crashed, the input cid is still in the file system.
+    In that case, we need to unlock the message in the db."""
+    # check if done=False and input_cid is in file system
+    try:
+        status_path = os.path.join(constants.input_path, "done")
+        with open(status_path, "r") as f:
+            done = f.read()
+        if done == "true":
+            return
+    except FileNotFoundError:
+        return
+    # We crashed, unlock the message and increase the attempt counter
+    try:
+        with open(constants.input_cid_path, "r") as f:
+            input_cid = f.read()
+        with open(constants.attempt_path, "r") as f:
+            attempt = int(f.read())
+        if attempt > constants.max_attempts:
+            logging.error(f"Too many attempts, giving up on {input_cid}")
+            supabase.table(constants.db_name).update({"success": False}).eq(
+                "input", input_cid
+            ).execute()
+            return
+        supabase.table(constants.db_name).update(
+            {
+                "processing_started": False,
+                "pollinator_group": None,
+                "worker": None,
+                "attempt": attempt + 1,
+            }
+        ).eq("input", input_cid).execute()
+    except FileNotFoundError:
+        pass
 
 
 def poll_forever():
@@ -43,34 +81,27 @@ def finish_all_tasks():
 
 def get_task_from_db():
     """Scan the db for tasks that are not in progress. If there are none, return None
-    If there are many, return the olderst one for the currently cog_handler.loaded_model.
-    If there are none for the cog_handler.loaded_model, return the oldest."""
-    data = (
-        supabase.table(constants.db_name)
-        .select("*")
-        .eq("processing_started", False)
-        .eq("image", cog_handler.loaded_model)
-        .in_("image", constants.available_models())
-        .order("priority", desc=True)
-        .order("request_submit_time")
-        .execute()
-    )
-    if len(data.data) > 0:
-        return data.data[0]
-    # No tasks found, include tasks for other images
-    data = (
+    If there are many, return one with the maximal priority.
+    If there are still many, return one with the currently loaded model.
+    If there are still many, return one with the oldest request_submit_time."""
+    candidates = (
         supabase.table(constants.db_name)
         .select("*")
         .eq("processing_started", False)
         .in_("image", constants.available_models())
         .order("priority", desc=True)
-        .order("request_submit_time")
+        .order("request_submit_time", desc=False)
         .execute()
-    )
-    if len(data.data) > 0:
-        return data.data[0]
-    # There is no task
-    return None
+    ).data
+    if len(candidates) == 0:
+        return None
+    priority = candidates[0]["priority"]
+    candidates = [c for c in candidates if c["priority"] == priority]
+    ready_candidates = [c for c in candidates if c["image"] == cog_handler.loaded_model]
+    if len(ready_candidates) > 0:
+        return ready_candidates[0]
+    else:
+        return candidates[0]
 
 
 def check_pollinator_updates():
@@ -107,10 +138,7 @@ def maybe_process(message):
             "Message is not for this model, waiting a bit to give other workers a chance"
         )
         time.sleep(1)
-    elif (
-        message["image"] != cog_handler.loaded_model
-        and cog_handler.loaded_model is None
-    ):
+    elif message["image"] != cog_handler.loaded_model:
         logging.info("No model loaded, wait 0.5s to give other workers a chance")
         time.sleep(0.5)
     try:
@@ -141,6 +169,11 @@ def lock_message(message):
     )
     if len(data.data) == 0:
         raise LockError(f"Message {message['input']} is already locked")
+    # write input cid to disk in case the worker crashes
+    with open(constants.input_cid_path, "w") as f:
+        f.write(message["input"])
+    with open(constants.attempt_path, "w") as f:
+        f.write(str(message["attempt"]))
 
 
 if __name__ == "__main__":
