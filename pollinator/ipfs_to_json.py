@@ -89,7 +89,7 @@ def prepare_output_folder(output_path):
 
 
 class BackgroundCommand:
-    def __init__(self, cmd, on_exit=None, wait_before_exit=0):
+    def __init__(self, cmd, on_exit=None, wait_before_exit=3):
         self.cmd = cmd
         self.on_exit = on_exit
         self.wait_before_exit = wait_before_exit
@@ -115,7 +115,10 @@ class BackgroundCommand:
         # except subprocess.TimeoutExpired:
         #     pass
         if self.on_exit is not None:
-            utils.system(self.on_exit)
+            try:
+                utils.system_with_timeout(self.on_exit)
+            except timeout_decorator.timeout_decorator.TimeoutError:
+                logging.error(f"Timeout while running on_exit command: {self.on_exit}")
 
 
 def tree_kill(pid):
