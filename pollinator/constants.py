@@ -39,7 +39,6 @@ ipfs_root = os.path.abspath("/tmp/ipfs/")
 output_path = os.path.join(ipfs_root, "output")
 input_path = os.path.join(ipfs_root, "input")
 
-
 pollinator_group = os.environ.get("POLLINATOR_GROUP", "T4")
 
 

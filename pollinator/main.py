@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import time
 
@@ -31,7 +32,7 @@ def check_if_chrashed():
     In that case, we need to unlock the message in the db."""
     # check if done=False and input_cid is in file system
     try:
-        status_path = constants.input_path / "done"
+        status_path = os.path.join(constants.input_path, "done")
         with open(status_path, "r") as f:
             done = f.read()
         if done == "true":
@@ -84,7 +85,7 @@ def get_task_from_db():
     If there are still many, return one with the currently loaded model.
     If there are still many, return one with the oldest request_submit_time."""
     candidates = (
-        supabase.table("pollen")
+        supabase.table(constants.db_name)
         .select("*")
         .eq("processing_started", False)
         .in_("image", constants.available_models())
@@ -137,10 +138,7 @@ def maybe_process(message):
             "Message is not for this model, waiting a bit to give other workers a chance"
         )
         time.sleep(1)
-    elif (
-        message["image"] != cog_handler.loaded_model
-        and cog_handler.loaded_model is None
-    ):
+    elif message["image"] != cog_handler.loaded_model:
         logging.info("No model loaded, wait 0.5s to give other workers a chance")
         time.sleep(0.5)
     try:
