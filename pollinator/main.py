@@ -51,6 +51,7 @@ def check_if_chrashed():
                 "input", input_cid
             ).execute()
             return
+        logging.info(f"Unlocking {input_cid}")
         supabase.table(constants.db_name).update(
             {
                 "processing_started": False,
