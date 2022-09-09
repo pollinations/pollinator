@@ -23,7 +23,6 @@ def main(db_name):
     constants.db_name = db_name
     """First finish all existing tasks, then go into infinite loop"""
     check_if_chrashed()
-    finish_all_tasks()
     poll_forever()
 
 
