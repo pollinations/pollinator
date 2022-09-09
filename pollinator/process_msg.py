@@ -91,8 +91,8 @@ def start_container_and_perform_request_and_send_outputs(message):
     with BackgroundCommand(
         f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} "
         f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}",
-        on_exit=f"pollinate-cli.js --send --path {ipfs_root} --once "
-        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}",
+        on_exit=f'timeout "/usr/local/bin/pollinate-cli.js --send --path {ipfs_root} --once '
+        f'| python pollinator/outputs_to_db.py {message["input"]} {constants.db_name}"',
     ):
         with RunningCogModel(image, output_path) as cogmodel:
             with BackgroundCommand(

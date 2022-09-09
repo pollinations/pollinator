@@ -116,7 +116,7 @@ class BackgroundCommand:
         #     pass
         if self.on_exit is not None:
             try:
-                utils.system_with_timeout(self.on_exit)
+                utils.system(self.on_exit)
             except timeout_decorator.timeout_decorator.TimeoutError:
                 logging.error(f"Timeout while running on_exit command: {self.on_exit}")
 
