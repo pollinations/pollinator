@@ -117,7 +117,7 @@ def kill_cog_model():
     try:
         container = docker_client.containers.get("cogmodel")
         logs = container.logs(stdout=True, stderr=True).decode("utf-8")
-        write_folder(f"{constants.output_dir}", "log", logs)
+        write_folder(f"{constants.output_path}", "log", logs)
         container.remove(force=True)
     except docker.errors.NotFound:
         pass
