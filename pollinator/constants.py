@@ -75,7 +75,7 @@ def available_models_(ttl_hash=None):
                     supported += [image]
         except KeyError:
             pass
-    return supported + [test_image]
+    return supported + [test_image, "failing-model"]
 
 
 def available_models():

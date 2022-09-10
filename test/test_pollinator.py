@@ -3,6 +3,8 @@ import tempfile
 import time
 from uuid import uuid4
 
+import requests
+
 from pollinator import constants
 from pollinator.constants import supabase
 from pollinator.process_msg import BackgroundCommand
@@ -45,6 +47,7 @@ def send_valid_dummy_request(**params):
     print("Insert:", payload)
     data = supabase.table(constants.db_name).insert(payload).execute()
     assert len(data.data) > 0, f"Failed to insert {cid} into db"
+    return cid
 
 
 def send_invalid_dummy_request():
@@ -58,6 +61,7 @@ def send_invalid_dummy_request():
 
 
 def clear_db():
+    assert constants.db_name != "pollen"
     supabase.table(constants.db_name).delete().neq(
         "input", "i just want to delete all rows"
     ).execute()
@@ -141,9 +145,28 @@ def assert_success_is_not(success=None):
     assert len(data) == 0, f"Found {len(data)} with success={success}: {data}"
 
 
+def manual_test_failing_image_logs():
+    # This test is not automated because it requires an additional failing cog model and the ci already takes so long
+    constants.db_name = "pollen_test_db"
+    clear_db()
+    cid = send_valid_dummy_request(image="failing-model")
+    with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
+        time.sleep(30)
+    assert_success_is_not(True)
+    # get the logs
+    data = (
+        supabase.table(constants.db_name).select("*").eq("input", cid).execute().data[0]
+    )
+    output = data["output"]
+    # download logs from IPFS
+    logs = requests.get(f"https://ipfs.pollinations.ai/ipfs/{output}/output/log").text
+    assert "Traceback" in logs
+
+
 if __name__ == "__main__":
     BackgroundCommand = DebugCommand  # noqa
-    test_many_open_requests_in_db()
-    test_priorities_are_respected()
-    test_no_open_request_subscribe_and_wait()
-    test_invalid_request_in_db()
+    manual_test_failing_image_logs()
+    # test_many_open_requests_in_db()
+    # test_priorities_are_respected()
+    # test_no_open_request_subscribe_and_wait()
+    # test_invalid_request_in_db()
