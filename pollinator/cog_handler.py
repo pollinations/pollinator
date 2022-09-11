@@ -93,13 +93,15 @@ class RunningCogModel:
     def shutdown(self):
         self.write_logs()
         self.kill_cog_model()
-    
+
     def kill_cog_model(self, logs=True):
         # get cogmodel logs and write them to output folder
         try:
             container = docker_client.containers.get("cogmodel")
             if logs:
-                logs = container.logs(stdout=True, stderr=True, since=self.pollen_start_time).decode("utf-8")
+                logs = container.logs(
+                    stdout=True, stderr=True, since=self.pollen_start_time
+                ).decode("utf-8")
                 write_folder(f"{constants.output_path}", "log", logs)
             container.remove(force=True)
         except docker.errors.NotFound:
