@@ -23,7 +23,7 @@ class DebugCommand:
         input()
 
 
-WAIT_TIME = 30
+WAIT_TIME = 40
 
 
 def upload_prompt_to_ipfs(prompt):
