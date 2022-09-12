@@ -48,7 +48,7 @@ class RunningCogModel:
             logging.info(f"Model already loaded: {self.image}")
             return self
         # Kill the running container if it is not the same model
-        kill_cog_model()
+        self.kill_cog_model(logs=False)
         self.pollen_since_container_start = 0
         # Start the container
         if constants.has_gpu:
@@ -92,7 +92,20 @@ class RunningCogModel:
 
     def shutdown(self):
         self.write_logs()
-        kill_cog_model()
+        self.kill_cog_model()
+
+    def kill_cog_model(self, logs=True):
+        # get cogmodel logs and write them to output folder
+        try:
+            container = docker_client.containers.get("cogmodel")
+            if logs:
+                logs = container.logs(
+                    stdout=True, stderr=True, since=self.pollen_start_time
+                ).decode("utf-8")
+                write_folder(f"{constants.output_path}", "log", logs)
+            container.remove(force=True)
+        except docker.errors.NotFound:
+            pass
 
     def wait_until_cogmodel_is_healthy(self, timeout=40 * 60):
         # Wait for the container to start
@@ -112,45 +125,21 @@ class RunningCogModel:
         raise UnhealthyCogContainer(f"Model unhealthy: {self.image}")
 
 
-def kill_cog_model():
-    # get cogmodel logs and write them to output folder
-    try:
-        container = docker_client.containers.get("cogmodel")
-        logs = container.logs(stdout=True, stderr=True).decode("utf-8")
-        write_folder(f"{constants.output_path}", "log", logs)
-        container.remove(force=True)
-    except docker.errors.NotFound:
-        pass
-    # for _ in range(5):
-    #     try:
-    #         docker_client.containers.get("cogmodel").kill()
-    #         time.sleep(1)
-    #     except docker.errors.NotFound:
-    #         return
-
-
 def send_to_cog_container(inputs, output_path):
     logging.info("Send to cog model")
     # Send message to cog container
     payload = {"input": inputs}
     response = requests.post("http://localhost:5000/predictions", json=payload)
-
     logging.info(f"response: {response}")
-
     write_folder(output_path, "time_start", str(int(time.time())))
-
+    write_folder(output_path, "done", "true")
     if response.status_code != 200:
         write_folder(output_path, "cog_response", json.dumps(response.text))
         write_folder(output_path, "success", "false")
-        kill_cog_model()
-        raise Exception(
-            f"Error while sending message to cog container: {response.text}"
-        )
     else:
         write_http_response_files(response, output_path)
         write_folder(output_path, "done", "true")
         logging.info(f"Set done to true in {output_path}")
-
     return response
 
 
