@@ -23,6 +23,9 @@ class DebugCommand:
         input()
 
 
+WAIT_TIME = 120
+
+
 def upload_prompt_to_ipfs(prompt):
     with tempfile.TemporaryDirectory() as tmpdir:
         os.makedirs(os.path.join(tmpdir, "input"))
@@ -73,7 +76,7 @@ def test_many_open_requests_in_db():
     for _ in range(2):
         send_valid_dummy_request()
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
-        time.sleep(30)
+        time.sleep(WAIT_TIME)
     pollen = (
         supabase.table(constants.db_name)
         .select("*")
@@ -91,10 +94,10 @@ def test_no_open_request_subscribe_and_wait():
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
         for _ in range(2):
             send_valid_dummy_request()
-        time.sleep(30)
+        time.sleep(WAIT_TIME)
         for _ in range(2):
             send_valid_dummy_request()
-        time.sleep(30)
+        time.sleep(WAIT_TIME)
     pollen = (
         supabase.table(constants.db_name)
         .select("*")
@@ -112,10 +115,10 @@ def test_invalid_request_in_db():
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
         for _ in range(2):
             send_invalid_dummy_request()
-        time.sleep(30)
+        time.sleep(WAIT_TIME)
         for _ in range(2):
             send_valid_dummy_request(image="non-existing-image")
-        time.sleep(30)
+        time.sleep(WAIT_TIME)
     assert_success_is_not(True)
 
 
@@ -126,7 +129,7 @@ def test_priorities_are_respected():
         send_valid_dummy_request(priority=i)
     send_valid_dummy_request()
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
-        time.sleep(30)
+        time.sleep(WAIT_TIME)
     pollen = (
         supabase.table(constants.db_name)
         .select("*")
@@ -151,7 +154,7 @@ def manual_test_failing_image_logs():
     clear_db()
     cid = send_valid_dummy_request(image="failing-model")
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
-        time.sleep(30)
+        time.sleep(WAIT_TIME)
     assert_success_is_not(True)
     # get the logs
     data = (
@@ -165,8 +168,8 @@ def manual_test_failing_image_logs():
 
 if __name__ == "__main__":
     BackgroundCommand = DebugCommand  # noqa
-    manual_test_failing_image_logs()
+    # manual_test_failing_image_logs()
     # test_many_open_requests_in_db()
     # test_priorities_are_respected()
-    # test_no_open_request_subscribe_and_wait()
-    # test_invalid_request_in_db()
+    test_no_open_request_subscribe_and_wait()
+    test_invalid_request_in_db()
