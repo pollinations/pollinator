@@ -60,7 +60,7 @@ class RunningCogModel:
             ]
         else:
             gpus = []
-        docker_client.containers.run(
+        container = docker_client.containers.run(
             self.image,
             detach=True,
             name="cogmodel",
@@ -69,7 +69,7 @@ class RunningCogModel:
             remove=True,
             device_requests=gpus,
         )
-        logging.info(f"Starting {self.image}: {self.container}")
+        logging.info(f"Starting {self.image}: {container}")
         # Wait for the container to start
         self.wait_until_cogmodel_is_healthy()
         loaded_model = self.image_name
