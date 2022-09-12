@@ -95,17 +95,22 @@ class RunningCogModel:
         self.kill_cog_model()
 
     def kill_cog_model(self, logs=True):
-        # get cogmodel logs and write them to output folder
-        try:
-            container = docker_client.containers.get("cogmodel")
-            if logs:
-                logs = container.logs(
-                    stdout=True, stderr=True, since=self.pollen_start_time
-                ).decode("utf-8")
-                write_folder(f"{constants.output_path}", "log", logs)
-            container.remove(force=True)
-        except docker.errors.NotFound:
-            pass
+        # get cogmodel logs and write them to output folder and kill container
+        for _ in range(5):
+            try:
+                container = docker_client.containers.get("cogmodel")
+                if logs:
+                    logs = container.logs(
+                        stdout=True, stderr=True, since=self.pollen_start_time
+                    ).decode("utf-8")
+                    write_folder(f"{constants.output_path}", "log", logs)
+                container.kill()
+                logging.info(f"Killed {self.image}")
+                time.sleep(1)
+            except docker.errors.NotFound:
+                return
+            except docker.errors.APIError:
+                time.sleep(1)
 
     def wait_until_cogmodel_is_healthy(self, timeout=40 * 60):
         # Wait for the container to start
