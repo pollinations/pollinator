@@ -70,7 +70,7 @@ def clear_db():
     ).execute()
 
 
-def test_many_open_requests_in_db():
+def deactivated_test_many_open_requests_in_db():
     constants.db_name = "pollen_test_db"
     clear_db()
     for _ in range(2):
@@ -88,7 +88,7 @@ def test_many_open_requests_in_db():
     assert_success_is_not(False)
 
 
-def test_no_open_request_subscribe_and_wait():
+def deactivated_test_no_open_request_subscribe_and_wait():
     constants.db_name = "pollen_test_db"
     clear_db()
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
@@ -109,7 +109,7 @@ def test_no_open_request_subscribe_and_wait():
     assert_success_is_not(False)
 
 
-def test_invalid_request_in_db():
+def deactivated_test_invalid_request_in_db():
     constants.db_name = "pollen_test_db"
     clear_db()
     with BackgroundCommand("python pollinator/main.py --db_name pollen_test_db"):
@@ -122,7 +122,7 @@ def test_invalid_request_in_db():
     assert_success_is_not(True)
 
 
-def test_priorities_are_respected():
+def deactivated_test_priorities_are_respected():
     constants.db_name = "pollen_test_db"
     clear_db()
     for i in range(2):
@@ -171,5 +171,5 @@ if __name__ == "__main__":
     # manual_test_failing_image_logs()
     # test_many_open_requests_in_db()
     # test_priorities_are_respected()
-    test_no_open_request_subscribe_and_wait()
-    test_invalid_request_in_db()
+    # test_no_open_request_subscribe_and_wait()
+    # test_invalid_request_in_db()
