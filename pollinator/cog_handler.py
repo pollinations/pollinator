@@ -68,6 +68,8 @@ class RunningCogModel:
             volumes={self.output_path: {"bind": "/outputs", "mode": "rw"}},
             remove=True,
             device_requests=gpus,
+            stderr=True,
+            tty=True
         )
         logging.info(f"Starting {self.image}: {container}")
         # Wait for the container to start
@@ -100,10 +102,7 @@ class RunningCogModel:
             try:
                 container = docker_client.containers.get("cogmodel")
                 if logs:
-                    logs = container.logs(
-                        stdout=True, stderr=True, since=self.pollen_start_time
-                    ).decode("utf-8")
-                    write_folder(f"{constants.output_path}", "log", logs)
+                    self.write_logs()
                 container.kill()
                 logging.info(f"Killed {self.image}")
                 time.sleep(1)

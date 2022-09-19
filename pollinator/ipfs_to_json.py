@@ -95,25 +95,13 @@ class BackgroundCommand:
         self.wait_before_exit = wait_before_exit
 
     def __enter__(self):
-        self.proc = subprocess.Popen(
-            f"exec {self.cmd}",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        self.proc = subprocess.Popen(['/bin/bash', '-c', self.cmd])
         return self.proc
 
     def __exit__(self, type, value, traceback):
         logging.info(f"Killing background command: {self.cmd}")
         time.sleep(self.wait_before_exit)
         tree_kill(self.proc.pid)
-        # try:
-        #     logs, errors = self.proc.communicate(timeout=2)
-        #     logs, errors = logs.decode("utf-8"), errors.decode("utf-8")
-        #     logging.info(f"   Logs: {logs}")
-        #     logging.error(f"   errors: {errors}")
-        # except subprocess.TimeoutExpired:
-        #     pass
         if self.on_exit is not None:
             try:
                 utils.system(self.on_exit)

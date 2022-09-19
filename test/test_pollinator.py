@@ -164,6 +164,7 @@ def manual_test_failing_image_logs():
     # download logs from IPFS
     logs = requests.get(f"https://ipfs.pollinations.ai/ipfs/{output}/output/log").text
     assert "Traceback" in logs
+    assert "100%" in logs
 
 
 if __name__ == "__main__":

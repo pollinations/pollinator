@@ -2,6 +2,9 @@
 # https://github.com/replicate/cog/blob/main/docs/python.md
 
 from cog import BasePredictor, Input
+from tqdm import tqdm
+import time
+import sys
 
 
 class Predictor(BasePredictor):
@@ -11,8 +14,9 @@ class Predictor(BasePredictor):
 
     def predict(self, Prompt: str = Input(description="Grayscale input image")) -> str:
         """Run a single prediction on the model"""
-        # processed_input = preprocess(input)
-        # output = self.model(processed_input, scale)
-        # return postprocess(output)
+        " use stdout for tqdm progress bar"
+        for i in tqdm(range(30)):
+            print(i)
+            time.sleep(1)
         raise Exception("Hopefully this exception shows up in the logs.")
         return Prompt
