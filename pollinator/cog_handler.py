@@ -86,7 +86,7 @@ class RunningCogModel:
                 .logs(stdout=True, stderr=True, since=self.pollen_start_time)
                 .decode("utf-8")
             )
-            write_folder(self.output_path, "container.log", logs)
+            write_folder(self.output_path, "log", logs)
         except (docker.errors.NotFound, docker.errors.APIError):
             pass
 
