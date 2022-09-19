@@ -69,7 +69,7 @@ class RunningCogModel:
             remove=True,
             device_requests=gpus,
             stderr=True,
-            tty=True
+            tty=True,
         )
         logging.info(f"Starting {self.image}: {container}")
         # Wait for the container to start

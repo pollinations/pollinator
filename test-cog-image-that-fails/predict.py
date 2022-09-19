@@ -1,10 +1,10 @@
 # Prediction interface for Cog ⚙️
 # https://github.com/replicate/cog/blob/main/docs/python.md
 
+import time
+
 from cog import BasePredictor, Input
 from tqdm import tqdm
-import time
-import sys
 
 
 class Predictor(BasePredictor):

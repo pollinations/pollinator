@@ -95,7 +95,7 @@ class BackgroundCommand:
         self.wait_before_exit = wait_before_exit
 
     def __enter__(self):
-        self.proc = subprocess.Popen(['/bin/bash', '-c', self.cmd])
+        self.proc = subprocess.Popen(["/bin/bash", "-c", self.cmd])
         return self.proc
 
     def __exit__(self, type, value, traceback):
