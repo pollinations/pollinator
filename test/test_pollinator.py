@@ -170,7 +170,7 @@ def manual_test_failing_image_logs():
 if __name__ == "__main__":
     BackgroundCommand = DebugCommand  # noqa
     manual_test_failing_image_logs()
-    # test_many_open_requests_in_db()
-    # test_priorities_are_respected()
-    # test_no_open_request_subscribe_and_wait()
-    # test_invalid_request_in_db()
+    test_many_open_requests_in_db()
+    test_priorities_are_respected()
+    test_no_open_request_subscribe_and_wait()
+    test_invalid_request_in_db()
