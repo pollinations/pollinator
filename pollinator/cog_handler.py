@@ -74,8 +74,8 @@ class RunningCogModel:
                 "SUPABASE_URL": constants.url,
                 "SUPABASE_API_KEY": constants.supabase_api_key,
                 "SUPABASE_ID": constants.supabase_id,
-                "OPENAI_API_KEY": constants.openai_api_key
-            }
+                "OPENAI_API_KEY": constants.openai_api_key,
+            },
         )
         logging.info(f"Starting {self.image}: {container}")
         # Wait for the container to start

@@ -23,7 +23,7 @@ def main(db_name):
     constants.db_name = db_name
     """First finish all existing tasks, then go into infinite loop"""
     check_if_chrashed()
-    poll_forever()
+    poll_for_some_time()
 
 
 def check_if_chrashed():
@@ -63,8 +63,9 @@ def check_if_chrashed():
         pass
 
 
-def poll_forever():
-    while True:
+def poll_for_some_time():
+    start = time.time()
+    while time.time() - start < constants.polling_time:
         try:
             finish_all_tasks()
             time.sleep(1)
