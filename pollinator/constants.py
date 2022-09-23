@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 import socket
 import time
 from functools import lru_cache
@@ -41,6 +42,10 @@ output_path = os.path.join(ipfs_root, "output")
 input_path = os.path.join(ipfs_root, "input")
 
 pollinator_group = os.environ.get("POLLINATOR_GROUP", "T4")
+
+polling_time = 60 * 60 * 6 + random.randint(
+    0, 60 * 60 * 6
+)  # 6-12 hours until process is ended
 
 
 model_index = (
