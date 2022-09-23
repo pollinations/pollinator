@@ -67,6 +67,7 @@ class RunningCogModel:
             ports={"5000/tcp": 5000},
             volumes={self.output_path: {"bind": "/outputs", "mode": "rw"}},
             remove=True,
+            auto_remove=True,
             device_requests=gpus,
             stderr=True,
             tty=True,
@@ -112,6 +113,7 @@ class RunningCogModel:
                 container.kill()
                 logging.info(f"Killed {self.image}")
                 time.sleep(1)
+                container.remove()
             except docker.errors.NotFound:
                 return
             except docker.errors.APIError:
