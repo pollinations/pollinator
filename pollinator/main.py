@@ -72,6 +72,9 @@ def poll_for_some_time():
         except Exception as e:
             logging.error(e)
             time.sleep(5)
+    logging.info("Polling time is over, exiting")
+    shutdown_pollinator()
+
 
 
 def finish_all_tasks():
@@ -118,12 +121,16 @@ def check_pollinator_updates():
     latest_pollinator_image = docker_client.images.get(constants.pollinator_image)
     if running_pollinator_image != latest_pollinator_image:
         print("Pollinator image has changed, restarting container", flush=True)
-        try:
-            docker_client.containers.get("pollinator").kill()
-        except docker.errors.NotFound:
-            sys.exit(0)
+        shutdown_pollinator()
     else:
         logging.info("Pollinator is up to date")
+
+
+def shutdown_pollinator():
+    try:
+        docker_client.containers.get("pollinator").kill()
+    except docker.errors.NotFound:
+        sys.exit(0)
 
 
 def maybe_process(message):
