@@ -31,7 +31,7 @@ openai_api_key = os.environ.get("OPENAI_API_KEY")
 db_name = ""  # will be set by main.py or a test
 test_image = "no-gpu-test-image"
 i_am_busy = False
-has_gpu = utils.system("nvidia-smi") == 0
+has_gpu = utils.system("nvidia-smi >/dev/null 2>&1") == 0
 gpu_flag = "--gpus all" if has_gpu else ""
 pollinator_image = os.environ.get("POLLINATOR_IMAGE")
 input_cid_path = "/tmp/ipfs/input_cid"
@@ -88,10 +88,11 @@ def available_models():
     return available_models_(get_ttl_hash())
 
 
-logging.info(f"Pollinator group: {pollinator_group}")
-logging.info(f"Pollinator image: {pollinator_image}")
-logging.info(f"Available models: {available_models()}")
-logging.info(f"DB (env): {os.environ.get('DB_NAME')}")
-logging.info(f"IP: {ip}")
-logging.info(f"hostname: {hostname}")
-logging.info(f"GPU: {has_gpu}")
+if __name__ == "__main__":
+    logging.info(f"Pollinator group: {pollinator_group}")
+    logging.info(f"Pollinator image: {pollinator_image}")
+    logging.info(f"Available models: {available_models()}")
+    logging.info(f"DB (env): {os.environ.get('DB_NAME')}")
+    logging.info(f"IP: {ip}")
+    logging.info(f"hostname: {hostname}")
+    logging.info(f"GPU: {has_gpu}")
