@@ -105,4 +105,7 @@ def start_container_and_perform_request_and_send_outputs(message):
                     success = True
         write_folder(output_path, "success", json.dumps(success))
         # utils.system("docker logs cogmodel > /tmp/ipfs/output/container.log")
+    
+    utils.system(f"timeout 5m /usr/local/bin/pollinate-cli.js --send --path {ipfs_root} --once "
+                 f'| python pollinator/outputs_to_db.py {message["input"]} {constants.db_name}')
     return message, success
