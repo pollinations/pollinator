@@ -22,6 +22,7 @@ docker_client = docker.from_env()
 def main(db_name):
     constants.db_name = db_name
     """First finish all existing tasks, then go into infinite loop"""
+    logging.info("Starting pollinator")
     check_if_chrashed()
     poll_for_some_time()
 
@@ -30,6 +31,7 @@ def check_if_chrashed():
     """If the worker crashed, the input cid is still in the file system.
     In that case, we need to unlock the message in the db."""
     # check if done=False and input_cid is in file system
+    logging.info("Checking if worker crashed")
     try:
         status_path = os.path.join(constants.output_path, "done")
         with open(status_path, "r") as f:
@@ -80,6 +82,7 @@ def poll_for_some_time():
 def finish_all_tasks():
     while (message := get_task_from_db()) is not None:
         # After this iteraton, the task will be processed either by this worker or by another worker
+        logging.info(f"Found task {message['input']}")
         maybe_process(message)
 
 

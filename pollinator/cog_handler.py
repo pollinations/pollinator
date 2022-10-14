@@ -10,7 +10,7 @@ import docker
 import requests
 
 from pollinator import constants
-from pollinator.ipfs_to_json import write_folder
+from pollinator.storage import write_folder
 
 docker_client = docker.from_env()
 
@@ -21,6 +21,7 @@ class UnhealthyCogContainer(Exception):
 
 loaded_model = None
 MAX_NUM_POLLEN_UNTIL_RESTART = 100
+
 
 
 class RunningCogModel:

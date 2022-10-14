@@ -12,7 +12,7 @@ from pollinator.constants import (
     output_path,
     supabase,
 )
-from pollinator.ipfs_to_json import (
+from pollinator.storage import (
     BackgroundCommand,
     clean_folder,
     fetch_inputs,
