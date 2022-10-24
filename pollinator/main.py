@@ -72,7 +72,7 @@ def poll_for_some_time():
             finish_all_tasks()
             time.sleep(1)
         except Exception as e:
-            logging.error(e)
+            logging.error(f"poll_for_some_time caught: {e}")
             time.sleep(5)
     logging.info("Polling time is over, exiting")
     shutdown_pollinator()

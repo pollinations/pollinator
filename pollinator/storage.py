@@ -26,7 +26,8 @@ def cid_to_json(cid: str):
         - filecontents containing a filename are resolved to absolute URIs
     """
     logging.info(f"Fetching IPFS dir {cid}")
-    content = requests.get(f"{constants.storage_service_endpoint}/?cid={cid}").json()
+    response = requests.get(f"{constants.storage_service_endpoint}/{cid}")
+    content = response.json()
     return content
 
 
@@ -57,7 +58,8 @@ def write_folder(path, key, value, mode="w"):
 
 def fetch_inputs(cid: str):
     try:
-        inputs = cid_to_json(cid)["input"]
+        data = cid_to_json(cid)
+        inputs = data["input"]
     except KeyError:
         raise ValueError(f"CID {cid} could ot be resolved")
     logging.info(f"Fetched inputs from IPFS {cid}: {inputs}")
@@ -114,3 +116,7 @@ def tree_kill(pid):
         print(f"Killing child: {child} {child.pid}")
         child.kill()
     parent.kill()
+
+
+if __name__ == "__main__":
+    fetch_inputs(sys.argv[1])

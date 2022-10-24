@@ -32,7 +32,7 @@ def process_message(message):
         )
         updated_message["success"] = success
     except Exception as e:
-        logging.error(e)
+        logging.error(f"process_message: caught {e}")
         updated_message["success"] = False
         updated_message["error"] = str(e)
 
