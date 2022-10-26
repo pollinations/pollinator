@@ -1,70 +1,66 @@
 #!/usr/bin/env python
 # coding: utf-8
-import json
 import logging
 import os
 import shutil
 import subprocess
 import sys
 import time
-from typing import Any, Dict
 
 import psutil
+import requests
 import timeout_decorator
 
-from pollinator import utils
+from pollinator import constants, utils
 
 
 @timeout_decorator.timeout(20)
-def ipfs_dir_to_json(cid: str):
+def cid_to_json(cid: str):
     """Get a CID of a dir in IPFS and return a dict. Runs "node /usr/local/bin/getcid-cli.js [cid]
     with {filename: filecontent} structure, where
         - files with file extension are skipped
         - filecontents containing a filename are resolved to absolute URIs
     """
     logging.info(f"Fetching IPFS dir {cid}")
-
-    # use subprocess to run getcid-cli.js
-
-    proc = subprocess.Popen(
-        ["node", "/usr/local/bin/getcid-cli.js", cid],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    stdout, stderr = proc.communicate()
-    if proc.returncode != 0:
-        logging.error(f"Error while fetching IPFS dir {cid}: {stderr}")
-        sys.exit(1)
-
-    # parse stdout to json
-    json_str = stdout.decode("utf-8")
-    print(json_str)
-    json_dict = json.loads(json_str)
-
-    return json_dict
+    response = requests.get(f"{constants.storage_service_endpoint}/{cid}")
+    content = response.json()
+    return content
 
 
-def ipfs_subfolder_to_json(cid: str, subdir: str) -> Dict[str, Any]:
-    """Get the contents of a subdir of a cid as json"""
-    json_dict = ipfs_dir_to_json(cid)
-    return json_dict[subdir]
-
-
-def fetch_inputs(ipfs_cid):
-    try:
-        inputs = ipfs_subfolder_to_json(ipfs_cid, "input")
-    except KeyError:
-        raise ValueError(f"IPFS hash {ipfs_cid} could ot be resolved")
-    logging.info(f"Fetched inputs from IPFS {ipfs_cid}: {inputs}")
-    return inputs
-
-
-# Since ipfs reads its data from the filesystem we write keys and values to files using this function
-# TODO: needs to handle URL values
 def write_folder(path, key, value, mode="w"):
     os.makedirs(path, exist_ok=True)
     with open(f"{path}/{key}", mode) as f:
         f.write(value)
+
+
+# we don't actually need to download referenced files
+# because cog does it and is happy with URLs
+# def download_referenced_files(data, target):
+#     # If it's a dict, recursively call this function
+#     # if a value is a URL, download it
+#     if isinstance(data, dict):
+#         for key, value in data.items():
+#             download_referenced_files(value, f"{target}/{key}")
+#     # If it's a list, recursively call this function
+#     elif isinstance(data, list):
+#         for i, value in enumerate(data):
+#             download_referenced_files(value, f"{target}/{key}/{i}")
+#     # If it's a URL, download it
+#     elif isinstance(data, str) and data.startswith("http"):
+#         os.makedirs(os.path.dirname(target), exist_ok=True)
+#         logging.info(f"Downloading {data} to {target}")
+#         urllib.request.urlretrieve(data, f"{target}")
+
+
+def fetch_inputs(cid: str):
+    try:
+        data = cid_to_json(cid)
+        inputs = data["input"]
+    except KeyError:
+        raise ValueError(f"CID {cid} could ot be resolved")
+    logging.info(f"Fetched inputs from IPFS {cid}: {inputs}")
+    # download_referenced_files(inputs, constants.input_path)
+    return inputs
 
 
 def clean_folder(folder):
@@ -118,16 +114,5 @@ def tree_kill(pid):
     parent.kill()
 
 
-# if an argument is passed, it is a cid
-
-
-def main():
-    if len(sys.argv) > 1:
-        cid = sys.argv[1]
-        print(ipfs_dir_to_json(cid)["input"])
-    else:
-        print("Usage: ipfs_to_json.py <cid>")
-
-
 if __name__ == "__main__":
-    main()
+    fetch_inputs(sys.argv[1])

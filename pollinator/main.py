@@ -22,6 +22,7 @@ docker_client = docker.from_env()
 def main(db_name):
     constants.db_name = db_name
     """First finish all existing tasks, then go into infinite loop"""
+    logging.info("Starting pollinator")
     check_if_chrashed()
     poll_for_some_time()
 
@@ -70,16 +71,16 @@ def poll_for_some_time():
             finish_all_tasks()
             time.sleep(1)
         except Exception as e:
-            logging.error(e)
+            logging.error(f"poll_for_some_time caught: {e}")
             time.sleep(5)
     logging.info("Polling time is over, exiting")
     shutdown_pollinator()
 
 
-
 def finish_all_tasks():
     while (message := get_task_from_db()) is not None:
         # After this iteraton, the task will be processed either by this worker or by another worker
+        logging.info(f"Found task {message['input']}")
         maybe_process(message)
 
 
@@ -142,9 +143,6 @@ def maybe_process(message):
         message["image"] != cog_handler.loaded_model
         and cog_handler.loaded_model is not None
     ):
-        logging.info(
-            "Message is not for this model, waiting a bit to give other workers a chance"
-        )
         time.sleep(1)
     elif message["image"] != cog_handler.loaded_model:
         logging.info("No model loaded, wait 0.5s to give other workers a chance")

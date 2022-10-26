@@ -3,14 +3,13 @@ import datetime as dt
 import json
 import logging
 import time
-import traceback
 from mimetypes import guess_extension
 
 import docker
 import requests
 
 from pollinator import constants
-from pollinator.ipfs_to_json import write_folder
+from pollinator.storage import write_folder
 
 docker_client = docker.from_env()
 
@@ -171,4 +170,3 @@ def write_http_response_files(response, output_path):
                 f.write(base64.b64decode(encoded))
     except Exception as e:  # noqa
         logging.info(f"http response not written to file: {type(e)} {e}")
-        traceback.print_exc()

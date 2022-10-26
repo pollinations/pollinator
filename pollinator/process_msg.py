@@ -12,7 +12,7 @@ from pollinator.constants import (
     output_path,
     supabase,
 )
-from pollinator.ipfs_to_json import (
+from pollinator.storage import (
     BackgroundCommand,
     clean_folder,
     fetch_inputs,
@@ -32,7 +32,7 @@ def process_message(message):
         )
         updated_message["success"] = success
     except Exception as e:
-        logging.error(e)
+        logging.error(f"process_message: caught {e}")
         updated_message["success"] = False
         updated_message["error"] = str(e)
 
@@ -50,12 +50,9 @@ def process_message(message):
         assert len(data) == 1
         cid = data[0]["output"]
         # todo get cid from data
-        print("Pollen set to done in db: ", data)
-        logging.info(f"Got CID: {cid}. Triggering pinning and social post")
         # run pinning and social post
         utils.system(f"node /usr/local/bin/pinning-cli.js {cid}")
         utils.system(f"node /usr/local/bin/social-post-cli.js {cid}")
-        logging.info("done pinning and social post")
 
     except Exception as e:  # noqa
         traceback.print_exc()
@@ -89,8 +86,7 @@ def start_container_and_perform_request_and_send_outputs(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} "
-        f"| python pollinator/outputs_to_db.py {message['input']} {constants.db_name}"
+        f"pollinate-cli.js --send --debounce 70 --path {ipfs_root} --nodeid {message['input']}  --ipns"
     ):
         with RunningCogModel(image, output_path) as cogmodel:
             with BackgroundCommand(
@@ -104,8 +100,7 @@ def start_container_and_perform_request_and_send_outputs(message):
                 else:
                     success = True
         write_folder(output_path, "success", json.dumps(success))
-        # utils.system("docker logs cogmodel > /tmp/ipfs/output/container.log")
-    
-    utils.system(f"timeout 5m /usr/local/bin/pollinate-cli.js --send --path {ipfs_root} --once "
-                 f'| python pollinator/outputs_to_db.py {message["input"]} {constants.db_name}')
+    utils.system(
+        f"timeout 5m /usr/local/bin/pollinate-cli.js --send --path {ipfs_root} --once --nodeid {message['input']} --ipns"
+    )
     return message, success
