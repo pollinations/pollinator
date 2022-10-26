@@ -1,21 +1,17 @@
 #!/usr/bin/env python
 # coding: utf-8
-import json
 import logging
 import os
 import shutil
 import subprocess
 import sys
 import time
-import requests
-from urllib import parse
-import urllib.request
 
 import psutil
+import requests
 import timeout_decorator
 
-from pollinator import utils, constants
-
+from pollinator import constants, utils
 
 
 @timeout_decorator.timeout(20)

@@ -31,7 +31,6 @@ def check_if_chrashed():
     """If the worker crashed, the input cid is still in the file system.
     In that case, we need to unlock the message in the db."""
     # check if done=False and input_cid is in file system
-    logging.info("Checking if worker crashed")
     try:
         status_path = os.path.join(constants.output_path, "done")
         with open(status_path, "r") as f:
@@ -76,7 +75,6 @@ def poll_for_some_time():
             time.sleep(5)
     logging.info("Polling time is over, exiting")
     shutdown_pollinator()
-
 
 
 def finish_all_tasks():
@@ -145,9 +143,6 @@ def maybe_process(message):
         message["image"] != cog_handler.loaded_model
         and cog_handler.loaded_model is not None
     ):
-        logging.info(
-            "Message is not for this model, waiting a bit to give other workers a chance"
-        )
         time.sleep(1)
     elif message["image"] != cog_handler.loaded_model:
         logging.info("No model loaded, wait 0.5s to give other workers a chance")

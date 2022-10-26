@@ -3,7 +3,6 @@ import datetime as dt
 import json
 import logging
 import time
-import traceback
 from mimetypes import guess_extension
 
 import docker
@@ -21,7 +20,6 @@ class UnhealthyCogContainer(Exception):
 
 loaded_model = None
 MAX_NUM_POLLEN_UNTIL_RESTART = 100
-
 
 
 class RunningCogModel:
@@ -172,4 +170,3 @@ def write_http_response_files(response, output_path):
                 f.write(base64.b64decode(encoded))
     except Exception as e:  # noqa
         logging.info(f"http response not written to file: {type(e)} {e}")
-        traceback.print_exc()
