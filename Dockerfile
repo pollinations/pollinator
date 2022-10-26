@@ -38,7 +38,6 @@ RUN mkdir -p $ipfs_root/input
 RUN mkdir -p $ipfs_root/output
 
 RUN git clone https://github.com/pollinations/pollinations-ipfs.git
-RUN cd /content/pollinations-ipfs && git checkout s3-blockstore
 RUN cd /content/pollinations-ipfs && npm run install_backend
 
 WORKDIR /app
