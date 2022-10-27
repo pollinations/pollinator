@@ -29,6 +29,7 @@ supabase: Client = create_client(url, supabase_api_key)
 supabase_id: str = os.environ["SUPABASE_ID"]
 storage_service_endpoint = "https://store.pollinations.ai/ipfs/"
 openai_api_key = os.environ.get("OPENAI_API_KEY")
+web3storage_token = os.environ.get("WEB3STORAGE_TOKEN")
 db_name = ""  # will be set by main.py or a test
 test_image = "no-gpu-test-image"
 i_am_busy = False

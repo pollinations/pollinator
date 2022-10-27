@@ -75,6 +75,7 @@ class RunningCogModel:
                 "SUPABASE_API_KEY": constants.supabase_api_key,
                 "SUPABASE_ID": constants.supabase_id,
                 "OPENAI_API_KEY": constants.openai_api_key,
+                "WEB3STORAGE_TOKEN": constants.web3storage_token
             },
         )
         logging.info(f"Starting {self.image}: {container}")
