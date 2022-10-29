@@ -100,7 +100,9 @@ def start_container_and_perform_request_and_send_outputs(message):
                 else:
                     success = True
         write_folder(output_path, "success", json.dumps(success))
-    utils.system(
-        f"/usr/local/bin/pollinate-cli.js --send --path {ipfs_root} --once --nodeid {message['input']} --ipns"
-    )
+        # sleep for 5 seconds to make sure the log file is written
+        utils.system("sleep 5")
+    # utils.system(
+    #     f"/usr/local/bin/pollinate-cli.js --send --path {ipfs_root} --once --nodeid {message['input']} --ipns"
+    # )
     return message, success
