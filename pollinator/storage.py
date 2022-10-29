@@ -3,6 +3,7 @@
 import logging
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -97,7 +98,9 @@ class BackgroundCommand:
     def __exit__(self, type, value, traceback):
         logging.info(f"Killing background command: {self.cmd}")
         time.sleep(self.wait_before_exit)
-        tree_kill(self.proc.pid)
+        tree_kill(self.proc.pid)        
+        # wait for the process to terminate
+        self.proc.wait()
         if self.on_exit is not None:
             try:
                 utils.system(self.on_exit)
@@ -110,8 +113,9 @@ def tree_kill(pid):
     parent = psutil.Process(pid)
     for child in parent.children(recursive=True):
         print(f"Killing child: {child} {child.pid}")
-        child.kill()
-    parent.kill()
+        # send SIGINT to the process
+        child.send_signal(signal.SIGINT)
+    parent.send_signal(signal.SIGINT)
 
 
 if __name__ == "__main__":
