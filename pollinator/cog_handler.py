@@ -138,9 +138,13 @@ class RunningCogModel:
 
 
 def send_to_cog_container(inputs, output_path):
-    logging.info("Send to cog model")
+    logging.info("Send to cog model", inputs)
+    inputs = flatten_image_inputs(inputs)
+    
     # Send message to cog container
     payload = {"input": inputs}
+   
+
     response = requests.post("http://localhost:5000/predictions", json=payload)
     logging.info(f"response: {response}")
     write_folder(output_path, "time_start", str(int(time.time())))
@@ -171,3 +175,17 @@ def write_http_response_files(response, output_path):
                 f.write(base64.b64decode(encoded))
     except Exception as e:  # noqa
         logging.info(f"http response not written to file: {type(e)} {e}")
+
+
+
+# transform dict of the form 
+# {"image": {"input1.png": "https://store.pollinations.ai/ipfs/Qm..."} } 
+# to
+# {"image": "https://store.pollinations.ai/ipfs/Qm..."} 
+def flatten_image_inputs(content):  
+    for key, value in content.items():
+        # if value is object, it is a dict of the form {"input1.png": "https://store.pollinations.ai/ipfs/Qm..."}
+        if isinstance(value, dict):
+            content[key] = list(value.values())[0]
+    return content
+
