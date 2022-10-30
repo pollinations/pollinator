@@ -186,6 +186,6 @@ def flatten_image_inputs(content):
     for key, value in content.items():
         # if value is object, it is a dict of the form {"input1.png": "https://store.pollinations.ai/ipfs/Qm..."}
         if isinstance(value, dict):
-            content[key] = list(value.values())[0]
+            content[key] = list(value.values())[1]
     return content
 
