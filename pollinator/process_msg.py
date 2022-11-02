@@ -86,7 +86,7 @@ def start_container_and_perform_request_and_send_outputs(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate-cli.js --send --path {ipfs_root} --nodeid {message['input']}  --ipns"
+        f"pollinate-cli.js --send --path {ipfs_root} --nodeid {message['input']}  --ipns --debounce 5000"
     ):
         with RunningCogModel(image, output_path) as cogmodel:
             with BackgroundCommand(
