@@ -86,7 +86,7 @@ def start_container_and_perform_request_and_send_outputs(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate-cli.js --send --path {ipfs_root} --nodeid {message['input']}  --ipns --debounce 5000"
+        f"pollinate-cli.js --send --path {ipfs_root} --nodeid {message['input']}  --ipns --debounce 2000"
     ):
         with RunningCogModel(image, output_path) as cogmodel:
             with BackgroundCommand(
@@ -99,6 +99,7 @@ def start_container_and_perform_request_and_send_outputs(message):
                     success = False
                 else:
                     success = True
+        utils.system("sleep 5")
         write_folder(output_path, "success", json.dumps(success))
         # sleep for 5 seconds to make sure the log file is written
         utils.system("sleep 5")
