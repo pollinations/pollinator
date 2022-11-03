@@ -89,16 +89,16 @@ def start_container_and_perform_request_and_send_outputs(message):
         f"pollinate-cli.js --send --path {ipfs_root} --nodeid {message['input']}  --ipns --debounce 2000"
     ):
         with RunningCogModel(image, output_path) as cogmodel:
-            with BackgroundCommand(
-                f"docker logs cogmodel -f --since {cogmodel.pollen_start_time.isoformat()} > {output_path}/log",
-                wait_before_exit=3,
-            ):
-                response = send_to_cog_container(inputs, output_path)
-                if response.status_code == 500:
-                    cogmodel.shutdown()
-                    success = False
-                else:
-                    success = True
+            # with BackgroundCommand(
+            #     f"docker logs cogmodel -f --since {cogmodel.pollen_start_time.isoformat()} > {output_path}/log",
+            #     wait_before_exit=3,
+            # ):
+            response = send_to_cog_container(inputs, output_path)
+            if response.status_code == 500:
+                cogmodel.shutdown()
+                success = False
+            else:
+                success = True
         utils.system("sleep 5")
         write_folder(output_path, "success", json.dumps(success))
         # sleep for 5 seconds to make sure the log file is written
