@@ -40,10 +40,10 @@ class RunningCogModel:
             running_image = container_object.image
             logging.info(f"got running image from docker_client: {running_image} with status {container_object.status}")
 
-            # check if image is not running and if so set running_image to None
-            if container_object.status != "running":
-                logging.info(f"container is not running, setting running_image to None")
-                running_image = None
+            # check if image is created but not started. start in that case
+            if container_object.status == "created":
+                logging.info(f"container is created but not running. starting")
+                container_object.start()
 
         except docker.errors.NotFound:
             running_image = None
@@ -116,8 +116,9 @@ class RunningCogModel:
 
     def kill_cog_model(self, logs=True):
         # get cogmodel logs and write them to output folder and kill container
-        for _ in range(5):
+        for i in range(5):
             try:
+                logging.info(f"trying to kill and remove cogmodel container. attempt {i}")
                 container = docker_client.containers.get("cogmodel")
                 if logs:
                     self.write_logs()
