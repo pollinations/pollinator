@@ -36,8 +36,15 @@ class RunningCogModel:
         # Check if the container is already running
         self.pollen_start_time = dt.datetime.now()
         try:
-            running_image = docker_client.containers.get("cogmodel").image
-            logging.info(f"got running fimage from docker_client: {running_image}")
+            container_object = docker_client.containers.get("cogmodel")
+            running_image = container_object.image
+            logging.info(f"got running image from docker_client: {running_image} with status {container_object.status}")
+
+            # check if image is not running and if so set running_image to None
+            if container_object.status != "running":
+                logging.info(f"container is not running, setting running_image to None")
+                running_image = None
+
         except docker.errors.NotFound:
             running_image = None
         logging.info(f"Running image: {running_image}")
