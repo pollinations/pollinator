@@ -23,7 +23,7 @@ def main(db_name):
     constants.db_name = db_name
     """First finish all existing tasks, then go into infinite loop"""
     logging.info("Starting pollinator")
-    check_if_chrashed()
+    # check_if_chrashed()
     poll_for_some_time()
 
 
