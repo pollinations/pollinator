@@ -37,6 +37,7 @@ class RunningCogModel:
         self.pollen_start_time = dt.datetime.now()
         try:
             running_image = docker_client.containers.get("cogmodel").image
+            logging.info(f"got running fimage from docker_client: {running_image}")
         except docker.errors.NotFound:
             running_image = None
         logging.info(f"Running image: {running_image}")
