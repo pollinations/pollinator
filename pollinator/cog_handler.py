@@ -56,6 +56,7 @@ class RunningCogModel:
         ):
             self.pollen_since_container_start += 1
             logging.info(f"Model already loaded: {self.image}")
+            loaded_model = self.image_name
             return self
         # Kill the running container if it is not the same model
         self.kill_cog_model(logs=False)
