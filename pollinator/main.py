@@ -135,6 +135,7 @@ def shutdown_pollinator():
 
 
 def maybe_process(message):
+    logging.info(f"Checking tasks for: {message['image']} - loaded model: {cog_handler.loaded_model}")
     check_pollinator_updates()
     if message["image"] not in constants.available_models():
         logging.info(f"Ignoring message for {message['image']}")
