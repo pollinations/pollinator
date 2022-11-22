@@ -5,20 +5,10 @@ import traceback
 
 from pollinator import constants, utils
 from pollinator.cog_handler import RunningCogModel, send_to_cog_container
-from pollinator.constants import (
-    available_models,
-    input_path,
-    ipfs_root,
-    output_path,
-    supabase,
-)
-from pollinator.storage import (
-    BackgroundCommand,
-    clean_folder,
-    fetch_inputs,
-    prepare_output_folder,
-    write_folder,
-)
+from pollinator.constants import (available_models, input_path, ipfs_root,
+                                  output_path, supabase)
+from pollinator.storage import (BackgroundCommand, clean_folder, fetch_inputs,
+                                prepare_output_folder, write_folder)
 
 
 def process_message(message):
@@ -86,20 +76,19 @@ def start_container_and_perform_request_and_send_outputs(message):
 
     # Start IPFS syncing
     with BackgroundCommand(
-        f"pollinate-cli.js --send --path {ipfs_root} --nodeid {message['input']}  --ipns --debounce 2000"
+        f"pollinate-cli.js --send --path {ipfs_root} --nodeid {message['input']}  --ipns --debounce 4000"
     ):
         with RunningCogModel(image, output_path) as cogmodel:
-            # with BackgroundCommand(
-            #     f"docker logs cogmodel -f --since {cogmodel.pollen_start_time.isoformat()} > {output_path}/log",
-            #     wait_before_exit=3,
-            # ):
-            response = send_to_cog_container(inputs, output_path)
-            if response.status_code == 500:
-                cogmodel.shutdown()
-                success = False
-            else:
-                success = True
-        utils.system("sleep 5")
+            with BackgroundCommand(
+                f"docker logs cogmodel -f --since {cogmodel.pollen_start_time.isoformat()} > {output_path}/log",
+                wait_before_exit=3,
+            ):
+                response = send_to_cog_container(inputs, output_path)
+                if response.status_code == 500:
+                    cogmodel.shutdown()
+                    success = False
+                else:
+                    success = True
         write_folder(output_path, "success", json.dumps(success))
         # sleep for 5 seconds to make sure the log file is written
         utils.system("sleep 5")
