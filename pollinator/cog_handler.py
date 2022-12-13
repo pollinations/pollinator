@@ -9,7 +9,6 @@ import docker
 import requests
 
 from pollinator import constants
-from pollinator.storage import write_folder
 
 docker_client = docker.from_env()
 
@@ -59,7 +58,7 @@ class RunningCogModel:
             loaded_model = self.image_name
             return self
         # Kill the running container if it is not the same model
-        self.kill_cog_model(logs=False)
+        self.kill_cog_model()
         self.pollen_since_container_start = 0
         # Start the container
         if constants.has_gpu:
@@ -97,32 +96,17 @@ class RunningCogModel:
         return self
 
     def __exit__(self, type, value, traceback):
-        # write container logs to output folder
-        self.write_logs()
-
-    def write_logs(self):
-        try:
-            logs = (
-                docker_client.containers.get("cogmodel")
-                .logs(stdout=True, stderr=True, since=self.pollen_start_time)
-                .decode("utf-8")
-            )
-            write_folder(self.output_path, "log", logs)
-        except (docker.errors.NotFound, docker.errors.APIError):
-            pass
+        pass
 
     def shutdown(self):
-        self.write_logs()
         self.kill_cog_model()
 
-    def kill_cog_model(self, logs=True):
+    def kill_cog_model(self):
         # get cogmodel logs and write them to output folder and kill container
         for i in range(5):
             try:
                 logging.info(f"trying to kill and remove cogmodel container. attempt {i}")
                 container = docker_client.containers.get("cogmodel")
-                if logs:
-                    self.write_logs()
                 container.kill()
                 logging.info(f"Killed {self.image}")
                 time.sleep(1)
@@ -148,47 +132,20 @@ class RunningCogModel:
             except:  # noqa
                 time.sleep(1)
         raise UnhealthyCogContainer(f"Model unhealthy: {self.image}")
+    
+    def get_logs(self):
+        container = docker_client.containers.get("cogmodel")
+        logs = container.logs(since=self.pollen_start_time, timestamps=True).decode("utf-8")
+        return logs
 
 
 def send_to_cog_container(inputs, output_path):
     logging.info("Send to cog model", inputs)
     inputs = flatten_image_inputs(inputs)
-    
     # Send message to cog container
     payload = {"input": inputs}
-   
-
     response = requests.post("http://localhost:5000/predictions", json=payload)
-    logging.info(f"response: {response}")
-    write_folder(output_path, "time_start", str(int(time.time())))
-    write_folder(output_path, "done", "true")
-    if response.status_code != 200:
-        write_folder(output_path, "cog_response", json.dumps(response.text))
-        write_folder(output_path, "success", "false")
-    else:
-        write_http_response_files(response, output_path)
-        write_folder(output_path, "done", "true")
-        logging.info(f"Set done to true in {output_path}")
     return response
-
-
-def write_http_response_files(response, output_path):
-    try:
-        output = response.json()["output"]
-        if not isinstance(output, list):
-            output = [output]
-        for i, encoded_file in enumerate(output):
-            try:
-                encoded_file = encoded_file["file"]
-            except TypeError:
-                pass  # already a string
-            meta, encoded = encoded_file.split(";base64,")
-            extension = guess_extension(meta.split(":")[1])
-            with open(f"{output_path}/out_{i}{extension}", "wb") as f:
-                f.write(base64.b64decode(encoded))
-    except Exception as e:  # noqa
-        logging.info(f"http response not written to file: {type(e)} {e}")
-
 
 
 # transform dict of the form 

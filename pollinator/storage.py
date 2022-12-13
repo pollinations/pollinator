@@ -28,12 +28,6 @@ def cid_to_json(cid: str):
     return content
 
 
-def write_folder(path, key, value, mode="w"):
-    os.makedirs(path, exist_ok=True)
-    with open(f"{path}/{key}", mode) as f:
-        f.write(value)
-
-
 # we don't actually need to download referenced files
 # because cog does it and is happy with URLs
 # def download_referenced_files(data, target):
@@ -77,37 +71,6 @@ def clean_folder(folder):
             print("Failed to delete %s. Reason: %s" % (file_path, e))
 
 
-def prepare_output_folder(output_path):
-    logging.info(f"Mounting output folder: {output_path}")
-    os.makedirs(output_path, exist_ok=True)
-    clean_folder(output_path)
-    write_folder(output_path, "done", "false")
-    write_folder(output_path, "time_start", str(int(time.time())))
-
-
-class BackgroundCommand:
-    def __init__(self, cmd, on_exit=None, wait_before_exit=3):
-        self.cmd = cmd
-        self.on_exit = on_exit
-        self.wait_before_exit = wait_before_exit
-
-    def __enter__(self):
-        self.proc = subprocess.Popen(["/bin/bash", "-c", self.cmd])
-        return self.proc
-
-    def __exit__(self, type, value, traceback):
-        logging.info(f"Killing background command: {self.cmd}")
-        time.sleep(self.wait_before_exit)
-        tree_kill(self.proc.pid)        
-        # wait for the process to terminate
-        self.proc.wait()
-        if self.on_exit is not None:
-            try:
-                utils.system(self.on_exit)
-            except timeout_decorator.timeout_decorator.TimeoutError:
-                logging.error(f"Timeout while running on_exit command: {self.on_exit}")
-
-
 def tree_kill(pid):
     print(f"Killing process {pid} and their complete family")
     parent = psutil.Process(pid)
@@ -116,6 +79,45 @@ def tree_kill(pid):
         # send SIGINT to the process
         child.send_signal(signal.SIGINT)
     parent.send_signal(signal.SIGINT)
+
+
+store_url = "https://store.pollinations.ai"
+
+
+def store(data: dict):
+    data = remove_none(data)
+    response = requests.post(f"{store_url}/", json=data)
+    response.raise_for_status()
+    cid = response.text
+    return cid
+
+
+def remove_none(data):
+    if isinstance(data, dict):
+        return {k: remove_none(v) for k, v in data.items() if v is not None}
+    elif isinstance(data, list):
+        return [remove_none(v) for v in data if v is not None]
+    else:
+        return data
+
+
+def lookup(cid: str):
+    response = requests.get(f"{store_url}/ipfs/{cid}")
+    response.raise_for_status()
+    data = adjust_format(response.json())
+    return data
+
+
+def adjust_format(data):
+    if isinstance(data, list):
+        return [adjust_format(x) for x in data]
+    elif isinstance(data, dict):
+        if "0" in data:
+            return [adjust_format(data[k]) for k in sorted(data.keys()) if k.isdigit()]
+        else:
+            return {k: adjust_format(v) for k, v in data.items() if k != ".cid"}
+    else:
+        return data
 
 
 if __name__ == "__main__":
