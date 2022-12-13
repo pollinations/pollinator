@@ -24,11 +24,9 @@ def process_message(message):
         (
             response_cid,
             success,
-            logs_cid,
         ) = start_container_and_perform_request_and_send_outputs(message)
         updated_message["success"] = success
         updated_message["output"] = response_cid
-        updated_message["logs"] = logs_cid
     except Exception as e:
         logging.error(f"process_message: caught {e}")
         updated_message["success"] = False
@@ -91,8 +89,10 @@ def start_container_and_perform_request_and_send_outputs(message):
         elif response.status_code == 200:
             response = response.json()
             success = response["status"] == "succeeded"
-            response_cid = store(response.get("output"))
         elif 400 <= response.status_code < 500:
             success = False
-    logs_cid = store({"logs": logs})
-    return response_cid, success, logs_cid
+    output = {
+        "output": dict(done=True, success=success, log=logs, **response.get("output")),
+    }
+    output_cid = store(output)
+    return output_cid, success
