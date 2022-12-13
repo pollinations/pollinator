@@ -5,9 +5,14 @@ import traceback
 
 from pollinator import constants, utils
 from pollinator.cog_handler import RunningCogModel, send_to_cog_container
-from pollinator.constants import (available_models, input_path, ipfs_root,
-                                  output_path, supabase)
-from pollinator.storage import fetch_inputs, store, clean_folder
+from pollinator.constants import (
+    available_models,
+    input_path,
+    ipfs_root,
+    output_path,
+    supabase,
+)
+from pollinator.storage import clean_folder, fetch_inputs, store
 
 
 def process_message(message):
@@ -16,9 +21,11 @@ def process_message(message):
     updated_message["start_time"] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     response = None
     try:
-        response_cid, success, logs_cid = start_container_and_perform_request_and_send_outputs(
-            message
-        )
+        (
+            response_cid,
+            success,
+            logs_cid,
+        ) = start_container_and_perform_request_and_send_outputs(message)
         updated_message["success"] = success
         updated_message["output"] = response_cid
         updated_message["logs"] = logs_cid
@@ -73,7 +80,9 @@ def start_container_and_perform_request_and_send_outputs(message):
     # Start IPFS syncing
     with RunningCogModel(image, output_path) as cogmodel:
         response = send_to_cog_container(inputs, output_path)
-        get_logs_cmd = f"docker logs cogmodel --since {cogmodel.pollen_start_time.isoformat()}"
+        get_logs_cmd = (
+            f"docker logs cogmodel --since {cogmodel.pollen_start_time.isoformat()}"
+        )
         logs = cogmodel.get_logs()
         response_cid = None
         if response.status_code == 500:
@@ -81,7 +90,7 @@ def start_container_and_perform_request_and_send_outputs(message):
             success = False
         elif response.status_code == 200:
             response = response.json()
-            success = response['status'] == 'succeeded'
+            success = response["status"] == "succeeded"
             response_cid = store(response.get("output"))
         elif 400 <= response.status_code < 500:
             success = False

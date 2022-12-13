@@ -37,7 +37,9 @@ class RunningCogModel:
         try:
             container_object = docker_client.containers.get("cogmodel")
             running_image = container_object.image
-            logging.info(f"got running image from docker_client: {running_image} with status {container_object.status}")
+            logging.info(
+                f"got running image from docker_client: {running_image} with status {container_object.status}"
+            )
 
             # check if image is created but not started. start in that case
             if container_object.status == "created":
@@ -86,7 +88,7 @@ class RunningCogModel:
                 "SUPABASE_API_KEY": constants.supabase_api_key,
                 "SUPABASE_ID": constants.supabase_id,
                 "OPENAI_API_KEY": constants.openai_api_key,
-                "WEB3STORAGE_TOKEN": constants.web3storage_token
+                "WEB3STORAGE_TOKEN": constants.web3storage_token,
             },
         )
         logging.info(f"Starting {self.image}: {container}")
@@ -105,7 +107,9 @@ class RunningCogModel:
         # get cogmodel logs and write them to output folder and kill container
         for i in range(5):
             try:
-                logging.info(f"trying to kill and remove cogmodel container. attempt {i}")
+                logging.info(
+                    f"trying to kill and remove cogmodel container. attempt {i}"
+                )
                 container = docker_client.containers.get("cogmodel")
                 container.kill()
                 logging.info(f"Killed {self.image}")
@@ -132,10 +136,12 @@ class RunningCogModel:
             except:  # noqa
                 time.sleep(1)
         raise UnhealthyCogContainer(f"Model unhealthy: {self.image}")
-    
+
     def get_logs(self):
         container = docker_client.containers.get("cogmodel")
-        logs = container.logs(since=self.pollen_start_time, timestamps=True).decode("utf-8")
+        logs = container.logs(since=self.pollen_start_time, timestamps=True).decode(
+            "utf-8"
+        )
         return logs
 
 
@@ -148,14 +154,13 @@ def send_to_cog_container(inputs, output_path):
     return response
 
 
-# transform dict of the form 
-# {"image": {"input1.png": "https://store.pollinations.ai/ipfs/Qm..."} } 
+# transform dict of the form
+# {"image": {"input1.png": "https://store.pollinations.ai/ipfs/Qm..."} }
 # to
-# {"image": "https://store.pollinations.ai/ipfs/Qm..."} 
-def flatten_image_inputs(content):  
+# {"image": "https://store.pollinations.ai/ipfs/Qm..."}
+def flatten_image_inputs(content):
     for key, value in content.items():
         # if value is object, it is a dict of the form {"input1.png": "https://store.pollinations.ai/ipfs/Qm..."}
         if isinstance(value, dict):
             content[key] = list(value.values())[1]
     return content
-
