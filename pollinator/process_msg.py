@@ -76,6 +76,7 @@ def start_container_and_perform_request_and_send_outputs(message):
     clean_folder(output_path)
 
     # Start IPFS syncing
+    output = {}
     with RunningCogModel(image, output_path) as cogmodel:
         response = send_to_cog_container(inputs, output_path)
         get_logs_cmd = (
@@ -88,11 +89,14 @@ def start_container_and_perform_request_and_send_outputs(message):
             success = False
         elif response.status_code == 200:
             response = response.json()
+            output = response.get("output")
             success = response["status"] == "succeeded"
         elif 400 <= response.status_code < 500:
             success = False
+    if not isinstance(output, dict):
+        output = {"medias": output}
     output = {
-        "output": dict(done=True, success=success, log=logs, **response.get("output")),
+        "output": dict(done=True, success=success, log=logs, **output),
     }
     output_cid = store(output)
     return output_cid, success
