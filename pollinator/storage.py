@@ -13,6 +13,7 @@ import requests
 import timeout_decorator
 
 from pollinator import constants, utils
+from pollinator.s3_wrapper import s3store
 
 
 @timeout_decorator.timeout(20)
@@ -23,9 +24,12 @@ def cid_to_json(cid: str):
         - filecontents containing a filename are resolved to absolute URIs
     """
     logging.info(f"Fetching IPFS dir {cid}")
-    response = requests.get(f"{constants.storage_service_endpoint}/{cid}")
-    content = response.json()
-    return content
+    if cid.startswith("s3:"):
+        return s3store.get(cid)
+    else:
+        response = requests.get(f"{constants.storage_service_endpoint}/{cid}")
+        content = response.json()
+        return content
 
 
 # we don't actually need to download referenced files
@@ -85,11 +89,12 @@ store_url = "https://store.pollinations.ai"
 
 
 def store(data: dict):
-    data = remove_none(data)
-    response = requests.post(f"{store_url}/", json=data)
-    response.raise_for_status()
-    cid = response.text
-    return cid
+    return s3store.put(data)
+    # data = remove_none(data)
+    # response = requests.post(f"{store_url}/", json=data)
+    # response.raise_for_status()
+    # cid = response.text
+    # return cid
 
 
 def remove_none(data):
