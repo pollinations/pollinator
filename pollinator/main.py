@@ -94,13 +94,12 @@ def get_task_from_db():
         .select("*")
         .eq("processing_started", False)
         .in_("image", constants.available_models())
-        .order("priority", desc=True)
         .order("request_submit_time", desc=False)
         .execute()
     ).data
     if len(candidates) == 0:
         return None
-    priority = candidates[0]["priority"]
+    priority = max([c["priority"] for c in candidates])
     candidates = [c for c in candidates if c["priority"] == priority]
     ready_candidates = [c for c in candidates if c["image"] == cog_handler.loaded_model]
     if len(ready_candidates) > 0:
