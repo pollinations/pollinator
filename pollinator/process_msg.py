@@ -44,8 +44,8 @@ def process_message(message):
         cid = data[0]["output"]
         # todo get cid from data
         # run pinning and social post
-        utils.system(f"node /usr/local/bin/pinning-cli.js {cid}")
-        utils.system(f"node /usr/local/bin/social-post-cli.js {cid}")
+        # utils.system(f"node /usr/local/bin/pinning-cli.js {cid}")
+        # utils.system(f"node /usr/local/bin/social-post-cli.js {cid}")
 
     except Exception as e:  # noqa
         traceback.print_exc()
