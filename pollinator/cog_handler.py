@@ -159,5 +159,8 @@ def flatten_image_inputs(content):
     for key, value in content.items():
         # if value is object, it is a dict of the form {"input1.png": "https://store.pollinations.ai/ipfs/Qm..."}
         if isinstance(value, dict):
-            content[key] = list(value.values())[1]
+            value.pop(".cid", None)
+            inner_key = list(value.keys())[0]
+            if "." in inner_key and value[inner_key].startswith("http"):
+                content[key] = value[inner_key]
     return content
