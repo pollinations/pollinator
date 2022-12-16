@@ -4,15 +4,13 @@ import logging
 import os
 import shutil
 import signal
-import subprocess
 import sys
-import time
 
 import psutil
 import requests
 import timeout_decorator
 
-from pollinator import constants, utils
+from pollinator import constants
 from pollinator.s3_wrapper import s3store
 
 

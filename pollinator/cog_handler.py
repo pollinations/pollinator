@@ -1,9 +1,6 @@
-import base64
 import datetime as dt
-import json
 import logging
 import time
-from mimetypes import guess_extension
 
 import docker
 import requests
@@ -43,7 +40,7 @@ class RunningCogModel:
 
             # check if image is created but not started. start in that case
             if container_object.status == "created":
-                logging.info(f"container is created but not running. starting")
+                logging.info("container is created but not running. starting")
                 container_object.start()
 
         except docker.errors.NotFound:

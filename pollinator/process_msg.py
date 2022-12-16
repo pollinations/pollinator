@@ -1,5 +1,4 @@
 import datetime as dt
-import json
 import logging
 import traceback
 
@@ -7,8 +6,6 @@ from pollinator import constants, utils
 from pollinator.cog_handler import RunningCogModel, send_to_cog_container
 from pollinator.constants import (
     available_models,
-    input_path,
-    ipfs_root,
     output_path,
     supabase,
 )
@@ -79,11 +76,7 @@ def start_container_and_perform_request_and_send_outputs(message):
     output = {}
     with RunningCogModel(image, output_path) as cogmodel:
         response = send_to_cog_container(inputs, output_path)
-        get_logs_cmd = (
-            f"docker logs cogmodel --since {cogmodel.pollen_start_time.isoformat()}"
-        )
         logs = cogmodel.get_logs()
-        response_cid = None
         if response.status_code == 500:
             cogmodel.shutdown()
             success = False
