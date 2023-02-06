@@ -91,5 +91,8 @@ def start_container_and_perform_request_and_send_outputs(message):
     output = {
         "output": dict(done=True, success=success, log=logs, **output),
     }
-    output_cid = store(output)
+    prefer_ipfs = not message['input'].startswith('s3')
+    output_cid = store(output, prefer_ipfs=prefer_ipfs)
+    if output_cid is None:
+        success = False
     return output_cid, success

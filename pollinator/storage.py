@@ -86,13 +86,15 @@ def tree_kill(pid):
 store_url = "https://store.pollinations.ai"
 
 
-def store(data: dict):
-    return s3store.put(data)
-    # data = remove_none(data)
-    # response = requests.post(f"{store_url}/", json=data)
-    # response.raise_for_status()
-    # cid = response.text
-    # return cid
+def store(data: dict, prefer_ipfs: bool = False):
+    if prefer_ipfs:
+        data = remove_none(data)
+        response = requests.post(f"{store_url}/", json=data)
+        response.raise_for_status()
+        cid = response.text
+        return cid
+    else:
+        return s3store.put(data)
 
 
 def remove_none(data):
